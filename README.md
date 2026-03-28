@@ -1,6 +1,6 @@
 # 🧠 42 Brain — Logic & Memory Trainer
 
-> *I was just trying to survive the 42 piscine. Then I got carried away. You're welcome.*
+> _I was just trying to survive the 42 piscine. Then I got carried away. You're welcome._
 
 [![Made with Vanilla JS](https://img.shields.io/badge/Made%20with-Vanilla%20JS-f7df1e?style=flat-square&logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![No frameworks were harmed](https://img.shields.io/badge/Frameworks-0-green?style=flat-square)](.)
@@ -13,9 +13,10 @@
 
 So, I was preparing for the **42 School** admission process — specifically the dreaded logic and memory tests that make you feel like your brain is being run through a blender on turbo mode.
 
-I couldn't find a good offline practice tool that actually *felt* like the real thing. So I built one. In one sitting. With too much coffee.
+I couldn't find a good offline practice tool that actually _felt_ like the real thing. So I built one. In one sitting. With too much coffee.
 
 **42 Brain** is a fast-paced, browser-based game that trains:
+
 - 🔢 **Number sequences** — arithmetic, geometric, Fibonacci-style
 - 🔷 **Pattern recognition** — symbol matrices, odd-one-out, find-the-rule
 - 🧩 **Deduction puzzles** — figure out the rule from input→output pairs
@@ -30,7 +31,7 @@ It runs **100% offline**, needs **zero installation**, and opens straight from a
 ### Option 1 — Just open it (seriously, that's it)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/42-brain.git
+git clone https://github.com/Mossesmuwa/42-brain.git
 cd 42-brain
 # Now open index.html in your browser
 ```
@@ -41,7 +42,7 @@ Double-click `index.html`. Done. No npm. No node_modules black hole. No `pip ins
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/42-brain.git
+git clone https://github.com/Mossesmuwa/42-brain.git
 cd 42-brain
 
 # Serve it locally (optional, any static server works)
@@ -65,28 +66,28 @@ Then open `http://localhost:8000` in your browser.
 
 ### Scoring
 
-| Event | Points |
-|-------|--------|
-| Correct answer | 100 + time bonus (up to +50) |
-| 3+ answer streak | 2× multiplier 🔥 |
-| Wrong / timeout | 0 pts, streak reset |
+| Event            | Points                       |
+| ---------------- | ---------------------------- |
+| Correct answer   | 100 + time bonus (up to +50) |
+| 3+ answer streak | 2× multiplier 🔥             |
+| Wrong / timeout  | 0 pts, streak reset          |
 
 ---
 
 ## 🧩 Puzzle Types
 
-| Type | Category | Description |
-|------|----------|-------------|
-| Arithmetic Sequence | Logic | `2 → 5 → 8 → ?` Find the next number |
-| Geometric Sequence | Logic | `3 → 6 → 12 → ?` Find the ratio |
-| Fibonacci-like | Logic | Each = sum of the two before it |
-| Shape Matrix | Logic | 3×3 symbol grid — fill the missing cell |
-| Odd One Out | Logic | Spot the symbol that doesn't belong |
-| Find the Rule | Logic | Input → Output pairs, apply to a new input |
-| Number Flash | Memory | See a sequence briefly, recall a specific position |
-| Color Flash | Memory | Colors flash, remember which was at position N |
-| Position Grid | Memory | Cells highlight briefly — was this one lit? |
-| Sequence Order | Memory | See all numbers, type them back in order |
+| Type                | Category | Description                                        |
+| ------------------- | -------- | -------------------------------------------------- |
+| Arithmetic Sequence | Logic    | `2 → 5 → 8 → ?` Find the next number               |
+| Geometric Sequence  | Logic    | `3 → 6 → 12 → ?` Find the ratio                    |
+| Fibonacci-like      | Logic    | Each = sum of the two before it                    |
+| Shape Matrix        | Logic    | 3×3 symbol grid — fill the missing cell            |
+| Odd One Out         | Logic    | Spot the symbol that doesn't belong                |
+| Find the Rule       | Logic    | Input → Output pairs, apply to a new input         |
+| Number Flash        | Memory   | See a sequence briefly, recall a specific position |
+| Color Flash         | Memory   | Colors flash, remember which was at position N     |
+| Position Grid       | Memory   | Cells highlight briefly — was this one lit?        |
+| Sequence Order      | Memory   | See all numbers, type them back in order           |
 
 Difficulty scales across rounds — early rounds are gentle, later rounds will test you properly.
 
@@ -109,13 +110,14 @@ No build step. No config files. No 47 layers of abstraction. Just four files and
 
 ## 🖼️ Screenshots
 
-> *Disclaimer: actual performance during your 42 exam may vary. Results not guaranteed. Side effects include sudden urge to stare at number sequences during commutes.*
+> _Disclaimer: actual performance during your 42 exam may vary. Results not guaranteed. Side effects include sudden urge to stare at number sequences during commutes._
 
 **Splash Screen** — pick your poison:
 
 The game opens with a clean splash screen where you select Easy / Normal / Hard and dive in.
 
 **In-game** — Fibonacci puzzle, Round 1:
+
 - Clear instruction text
 - Arrow-linked number boxes with one missing (`?`)
 - 4 multiple-choice options
@@ -124,10 +126,12 @@ The game opens with a clean splash screen where you select Easy / Normal / Hard 
 - Progress dots at the bottom
 
 **Memory Round** — position recall:
+
 - A grid of cells flashes highlighted positions briefly
 - Then: "Was position 10 highlighted?" — Yes or No
 
 **Results Screen:**
+
 - Final score, accuracy %, best streak
 - Color-coded round-by-round timeline (🟢 correct / 🔴 wrong / 🟠 timeout)
 - Radar chart across Logic, Memory, Speed, Streak, Accuracy axes
@@ -136,10 +140,10 @@ The game opens with a clean splash screen where you select Easy / Normal / Hard 
 
 ## ⌨️ Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
+| Key             | Action                        |
+| --------------- | ----------------------------- |
 | `1` `2` `3` `4` | Select multiple-choice answer |
-| `Enter` | Submit typed answer |
+| `Enter`         | Submit typed answer           |
 
 That's it. Two shortcuts. Minimalism is a virtue.
 
@@ -183,7 +187,7 @@ The 42 piscine is genuinely one of the most intense coding experiences out there
 
 Good luck. Train hard. Think fast.
 
-*— Someone who stared at too many number sequences*
+_— Someone who stared at too many number sequences_
 
 ---
 
