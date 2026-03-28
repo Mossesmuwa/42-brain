@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>42 Brain — Logic & Memory Trainer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── SPLASH SCREEN ─────────────────────────────────────────── -->
+  <div id="splash" class="screen active">
+    <div class="splash-bg"></div>
+    <div class="splash-content">
+      <div class="logo-wrap">
+        <span class="logo-icon">⬡</span>
+        <h1 class="logo-text">42 Brain</h1>
+      </div>
+      <p class="splash-tagline">Logic · Memory · Speed · Precision</p>
+      <p class="splash-sub">Train like you're at the piscine.</p>
+
+      <div class="difficulty-picker">
+        <p class="picker-label">Select Difficulty</p>
+        <div class="picker-btns">
+          <button class="diff-btn" data-diff="easy">Easy</button>
+          <button class="diff-btn active" data-diff="normal">Normal</button>
+          <button class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+      </div>
+
+      <button id="startBtn" class="cta-btn">Start Training →</button>
+
+      <div class="legend">
+        <div class="legend-item"><span class="tag tag-logic">Logic</span> Sequences · Deduction · Patterns</div>
+        <div class="legend-item"><span class="tag tag-memory">Memory</span> Flash recall · Positions · Colors</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ────────────────────────────────────────────── -->
+  <div id="gameScreen" class="screen">
+
+    <!-- Header bar -->
+    <header class="hbar">
+      <div class="hbar-left">
+        <span class="logo-sm">⬡ 42 Brain</span>
+      </div>
+      <div class="hbar-center">
+        <div class="pill" id="roundPill">Round <span id="roundNum">1</span> / <span id="totalRounds">10</span></div>
+        <div class="pill pill-type" id="typePill">Logic</div>
+      </div>
+      <div class="hbar-right">
+        <div class="score-box">
+          <span class="score-label">Score</span>
+          <span class="score-val" id="scoreVal">0</span>
+        </div>
+        <div class="streak-box" id="streakBox">
+          <span class="streak-icon">🔥</span>
+          <span id="streakVal">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Timer bar -->
+    <div class="timer-bar-wrap">
+      <div id="timerBar" class="timer-bar"></div>
+    </div>
+    <div class="timer-num-wrap">
+      <span id="timerNum" class="timer-num">15</span><span class="timer-s">s</span>
+    </div>
+
+    <!-- Main puzzle area -->
+    <main class="puzzle-area" id="puzzleArea">
+
+      <!-- Memory flash overlay -->
+      <div id="flashOverlay" class="flash-overlay hidden">
+        <p class="flash-hint">Memorise this!</p>
+        <div id="flashContent" class="flash-content"></div>
+        <div class="flash-countdown-wrap">
+          <div id="flashBar" class="flash-bar"></div>
+        </div>
+      </div>
+
+      <!-- Puzzle prompt -->
+      <div id="puzzlePrompt" class="puzzle-prompt">
+        <p id="puzzleInstruction" class="puzzle-instruction"></p>
+        <div id="puzzleDisplay" class="puzzle-display"></div>
+      </div>
+
+      <!-- Answer area -->
+      <div id="answerArea" class="answer-area">
+        <!-- Fills dynamically -->
+      </div>
+
+      <!-- Drag-drop grid (for position memory) -->
+      <div id="dragGrid" class="drag-grid hidden"></div>
+
+    </main>
+
+    <!-- Feedback toast -->
+    <div id="feedbackToast" class="feedback-toast hidden">
+      <span id="feedbackIcon"></span>
+      <span id="feedbackText"></span>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="progress-dots" id="progressDots"></div>
+
+  </div>
+
+  <!-- ── RESULTS SCREEN ─────────────────────────────────────────── -->
+  <div id="resultsScreen" class="screen">
+    <div class="results-card">
+      <div class="results-header">
+        <span id="resultEmoji" class="result-emoji">🏆</span>
+        <h2 id="resultTitle" class="result-title"></h2>
+      </div>
+      <div class="result-stats">
+        <div class="stat-box">
+          <span class="stat-num" id="finalScore">0</span>
+          <span class="stat-label">Final Score</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="finalCorrect">0</span>
+          <span class="stat-label">Correct</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="finalAccuracy">0%</span>
+          <span class="stat-label">Accuracy</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="finalStreak">0</span>
+          <span class="stat-label">Best Streak</span>
+        </div>
+      </div>
+
+      <!-- Per-round timeline -->
+      <div class="round-timeline" id="roundTimeline"></div>
+
+      <!-- Radar chart canvas -->
+      <canvas id="radarCanvas" width="280" height="280"></canvas>
+
+      <div class="result-actions">
+        <button class="cta-btn" id="playAgainBtn">Play Again</button>
+        <button class="sec-btn" id="mainMenuBtn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="puzzles.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
