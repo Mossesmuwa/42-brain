@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="42 Brain — Logic and memory trainer inspired by 42-school entrance tests. Train your cognitive skills offline." />
   <title>42 Brain — Logic & Memory Trainer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -14,6 +15,10 @@
   <div id="splash" class="screen active">
     <div class="splash-bg"></div>
     <div class="splash-content">
+      <div class="splash-top-bar">
+        <button id="themeToggle" class="icon-btn" title="Toggle dark mode">🌙</button>
+        <button id="statsBtn" class="icon-btn" title="Stats & Achievements">📊</button>
+      </div>
       <div class="logo-wrap">
         <span class="logo-icon">⬡</span>
         <h1 class="logo-text">42 Brain</h1>
@@ -31,10 +36,58 @@
       </div>
 
       <button id="startBtn" class="cta-btn">Start Training →</button>
+      <button id="dailyBtn" class="cta-btn daily-cta">📅 Daily Challenge</button>
 
       <div class="legend">
         <div class="legend-item"><span class="tag tag-logic">Logic</span> Sequences · Deduction · Patterns</div>
         <div class="legend-item"><span class="tag tag-memory">Memory</span> Flash recall · Positions · Colors</div>
+        <div class="legend-item"><span class="tag tag-math">Math</span> Mental math · Equations</div>
+        <div class="legend-item"><span class="tag tag-attention">Focus</span> Reaction · Visual search</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STATS & ACHIEVEMENTS PANEL ────────────────────────────── -->
+  <div id="statsPanel" class="screen">
+    <div class="stats-card">
+      <div class="stats-header">
+        <h2>📊 Stats & Achievements</h2>
+        <button id="closeStatsBtn" class="icon-btn">✕</button>
+      </div>
+
+      <div class="stats-tabs">
+        <button class="stab active" data-tab="stats">Stats</button>
+        <button class="stab" data-tab="achievements">Achievements</button>
+        <button class="stab" data-tab="scores">High Scores</button>
+      </div>
+
+      <!-- Stats tab -->
+      <div id="tabStats" class="tab-panel active">
+        <div class="result-stats">
+          <div class="stat-box"><span class="stat-num" id="ltGames">0</span><span class="stat-label">Games</span></div>
+          <div class="stat-box"><span class="stat-num" id="ltAccuracy">0%</span><span class="stat-label">Accuracy</span></div>
+          <div class="stat-box"><span class="stat-num" id="ltBestScore">0</span><span class="stat-label">Best Score</span></div>
+          <div class="stat-box"><span class="stat-num" id="ltBestStreak">0</span><span class="stat-label">Best Streak</span></div>
+        </div>
+        <div class="daily-streak-box">
+          <p class="streak-title">📅 Daily Streak</p>
+          <span class="streak-big" id="dailyStreak">0</span>
+          <span class="streak-unit">days</span>
+        </div>
+        <div class="stats-actions">
+          <button id="exportDataBtn" class="sec-btn">Export Data</button>
+          <button id="clearDataBtn" class="sec-btn danger-btn">Clear All Data</button>
+        </div>
+      </div>
+
+      <!-- Achievements tab -->
+      <div id="tabAchievements" class="tab-panel">
+        <div id="achievementsList" class="achievements-grid"></div>
+      </div>
+
+      <!-- High Scores tab -->
+      <div id="tabScores" class="tab-panel">
+        <div id="scoresList" class="scores-list"></div>
       </div>
     </div>
   </div>
@@ -45,6 +98,7 @@
     <!-- Header bar -->
     <header class="hbar">
       <div class="hbar-left">
+        <button id="exitGameBtn" class="exit-btn" title="Quit session">✖</button>
         <span class="logo-sm">⬡ 42 Brain</span>
       </div>
       <div class="hbar-center">
@@ -52,6 +106,7 @@
         <div class="pill pill-type" id="typePill">Logic</div>
       </div>
       <div class="hbar-right">
+        <button id="hintBtn" class="hint-btn" title="Show hint">💡</button>
         <div class="score-box">
           <span class="score-label">Score</span>
           <span class="score-val" id="scoreVal">0</span>
@@ -69,6 +124,11 @@
     </div>
     <div class="timer-num-wrap">
       <span id="timerNum" class="timer-num">15</span><span class="timer-s">s</span>
+    </div>
+
+    <!-- Hint bar -->
+    <div id="hintBar" class="hint-bar hidden">
+      <span id="hintText" class="hint-text"></span>
     </div>
 
     <!-- Main puzzle area -->
@@ -116,6 +176,7 @@
       <div class="results-header">
         <span id="resultEmoji" class="result-emoji">🏆</span>
         <h2 id="resultTitle" class="result-title"></h2>
+        <p id="resultQuote" class="result-quote"></p>
       </div>
       <div class="result-stats">
         <div class="stat-box">
@@ -139,6 +200,9 @@
       <!-- Per-round timeline -->
       <div class="round-timeline" id="roundTimeline"></div>
 
+      <!-- Achievements unlocked -->
+      <div id="achievementsUnlocked" class="achievements-unlocked hidden"></div>
+
       <!-- Radar chart canvas -->
       <canvas id="radarCanvas" width="280" height="280"></canvas>
 
@@ -149,6 +213,18 @@
     </div>
   </div>
 
+  <!-- ── ACHIEVEMENT TOAST ──────────────────────────────────────── -->
+  <div id="achievementToast" class="achievement-toast hidden">
+    <span id="achIcon" class="ach-icon"></span>
+    <div class="ach-info">
+      <span class="ach-label">Achievement Unlocked!</span>
+      <span id="achName" class="ach-name"></span>
+    </div>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="sounds.js"></script>
+  <script src="achievements.js"></script>
   <script src="puzzles.js"></script>
   <script src="game.js"></script>
 </body>
