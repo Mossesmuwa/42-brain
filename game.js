@@ -11,6 +11,11 @@ const G = {
   totalRounds: 10,
   difficulty: 'normal',
   mode: 'training',      // training | daily
+  category: 'all',
+  player: 1,
+  playerNames: ['Player 1', 'Player 2'],
+  playerScores: [0, 0],
+  customRounds: 10,
   round: 0,
   score: 0,
   streak: 0,
@@ -30,10 +35,16 @@ const G = {
   // Reaction puzzle state
   reactionStart: 0,
   reactionTimes: [],
+  sessionTimer: null,
+  paused: false,
+  usedPuzzleIds: new Set(),
+  examStarted: false,
+  practiceQueue: [],
 };
 
 /* ── DOM REFS ────────────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
+const iconSvg = name => `<svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#${name}"/></svg>`;
 
 const screens = {
   splash: $('splash'),
@@ -49,6 +60,7 @@ const el = {
   statsBtn:         $('statsBtn'),
   closeStatsBtn:    $('closeStatsBtn'),
   hintBtn:          $('hintBtn'),
+  pauseBtn:         $('pauseBtn'),
   hintBar:          $('hintBar'),
   hintText:         $('hintText'),
   exitGameBtn:      $('exitGameBtn'),
@@ -90,6 +102,9 @@ const el = {
   ltBestScore:      $('ltBestScore'),
   ltBestStreak:     $('ltBestStreak'),
   dailyStreak:      $('dailyStreak'),
+  categoryCanvas:   $('categoryCanvas'),
+  historyCanvas:    $('historyCanvas'),
+  weakestCategory:  $('weakestCategory'),
   achievementsList: $('achievementsList'),
   scoresList:       $('scoresList'),
   exportDataBtn:    $('exportDataBtn'),
@@ -105,13 +120,17 @@ const el = {
   const settings = Store.getSettings();
   SoundFX.init(settings.volume, settings.sound);
   applyTheme(settings.theme);
+  document.body.classList.toggle('large-text', settings.largeText);
+  document.body.classList.toggle('high-contrast', settings.highContrast);
+  document.body.classList.toggle('colorblind', settings.colorblind);
+  document.body.classList.toggle('reduce-motion', settings.reducedMotion);
   if (Store.completedToday()) el.dailyBtn.textContent = '✅ Daily Done';
 })();
 
 /* ── THEME ───────────────────────────────────────────────────────── */
 function applyTheme(theme) {
   document.body.classList.toggle('dark', theme === 'dark');
-  el.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  el.themeToggle.innerHTML = `<svg class="ui-icon"><use href="ui-icons.svg#${theme === 'dark' ? 'sun' : 'moon'}"/></svg>`;
 }
 
 el.themeToggle.addEventListener('click', () => {
@@ -154,15 +173,21 @@ function startGame() {
   G.bestStreak = 0;
   G.results = [];
   G.reactionTimes = [];
+  G.usedPuzzleIds = new Set();
+  G.practiceQueue = G.mode === 'mistakes' ? Store.getStats().mistakes.filter(m => m.puzzle).slice(0, 10) : [];
   G.hintUsed = false;
 
-  G.totalRounds = G.mode === 'daily' ? 10 : { easy: 8, normal: 10, hard: 12 }[G.difficulty];
-  G.maxTime     = { easy: 20, normal: 15, hard: 10 }[G.difficulty];
+  G.totalRounds = G.mode === 'daily' ? 10 : G.mode === 'exam' ? 42 : G.mode === 'custom' ? G.customRounds : G.mode === 'mistakes' ? Math.max(1, G.practiceQueue.length) : G.mode === 'endless' || G.mode === 'minute' ? 999 : { easy: 8, normal: 10, hard: 12 }[G.difficulty];
+  G.maxTime     = G.mode === 'exam' ? 10 : { easy: 20, normal: 15, hard: 10 }[G.difficulty];
 
   el.totalRounds.textContent = G.totalRounds;
   el.scoreVal.textContent = '0';
   el.streakVal.textContent = '0';
   el.hintBar.classList.add('hidden');
+  if (G.mode === 'exam') el.hintBtn.classList.add('hidden'); else el.hintBtn.classList.remove('hidden');
+  el.pauseBtn.classList.toggle('hidden', G.mode === 'exam');
+  clearTimeout(G.sessionTimer);
+  if (G.mode === 'minute') G.sessionTimer = setTimeout(() => { stopTimer(); G.round = G.totalRounds; showResults(); }, 60000);
 
   buildProgressDots();
   showScreen('game');
@@ -197,15 +222,17 @@ el.hintBtn.addEventListener('click', () => {
   el.hintBar.classList.remove('hidden');
   el.hintText.textContent = G.puzzle.hint || 'Think carefully!';
 });
+el.pauseBtn.addEventListener('click', () => {
+  if (G.answered) return;
+  G.paused = !G.paused;
+  if (G.paused) { clearInterval(G.timerInterval); el.pauseBtn.textContent = '▶'; el.feedbackText.textContent = 'Paused — press play to resume'; el.feedbackToast.className = 'feedback-toast'; el.feedbackToast.classList.remove('hidden'); }
+  else { el.pauseBtn.textContent = 'Ⅱ'; el.feedbackToast.classList.add('hidden'); startTimer(true); }
+});
 
 /* ── QUIT SESSION ────────────────────────────────────────────────── */
 el.exitGameBtn.addEventListener('click', () => {
   SoundFX.click();
-  if (confirm('Quit the current session? Your progress will be lost.')) {
-    stopTimer();
-    clearTimeout(G.flashTimeout);
-    showScreen('splash');
-  }
+  appModal('Quit the current session? Your progress will be lost.', true, () => { stopTimer(); clearTimeout(G.flashTimeout); showScreen('splash'); });
 });
 
 /* ── ROUND FLOW ──────────────────────────────────────────────────── */
@@ -218,10 +245,19 @@ function nextRound() {
   G.attnErrors = 0;
   el.hintBar.classList.add('hidden');
 
-  if (G.mode === 'daily') {
+  if (G.mode === 'mistakes' && G.practiceQueue.length) {
+    G.puzzle = G.practiceQueue[Math.min(G.round, G.practiceQueue.length - 1)].puzzle;
+  } else if (G.mode === 'daily') {
     G.puzzle = PuzzleEngine.generateDaily(G.round, G.totalRounds);
   } else {
-    G.puzzle = PuzzleEngine.generate(G.round, G.difficulty, G.totalRounds);
+    G.puzzle = PuzzleEngine.generate(G.round, G.difficulty, G.totalRounds,
+      G.mode === 'custom' ? 'custom' : (G.category === 'all' ? null : G.category));
+    let attempts = 0;
+    while (G.usedPuzzleIds.has(G.puzzle.id) && attempts++ < 8) {
+      G.puzzle = PuzzleEngine.generate(G.round, G.difficulty, G.totalRounds,
+        G.mode === 'custom' ? 'custom' : (G.category === 'all' ? null : G.category));
+    }
+    G.usedPuzzleIds.add(G.puzzle.id);
   }
 
   // Update HUD
@@ -235,7 +271,7 @@ function nextRound() {
     attention: { bg: 'var(--orange-light)', fg: 'var(--orange)', bc: '#fed7aa' },
   };
   const type = G.puzzle.type;
-  el.typePill.textContent = typeMap[type] || 'Logic';
+  el.typePill.textContent = (G.mode === 'duo' ? `${G.playerNames[G.player - 1]} · ` : '') + (typeMap[type] || 'Logic');
   const c = colorMap[type] || colorMap.logic;
   el.typePill.style.background = c.bg;
   el.typePill.style.color = c.fg;
@@ -333,11 +369,57 @@ function renderPuzzle() {
     renderFindRule, renderMemNumbers, renderMemColors,
     renderMemPositions, renderMemOrder, renderMemLetters,
     renderDeduction, renderMentalMath, renderReactionTime,
-    renderAttentionFocus, renderCustom,
+    renderAttentionFocus, renderSpatialRotation, renderWordLogic,
+    renderPriorityOrder, renderCustom, renderBalanceScale,
+    renderGridPath, renderCodeBreaker, renderProbability, renderWordTransform,
   };
   const fn = renderers[p.renderFn];
   if (fn) fn(p);
   else buildOptionButtons(p, 'cols-4'); // fallback
+}
+
+function renderBalanceScale(p) {
+  const box = document.createElement('div');
+  box.className = 'puzzle-display-card';
+  box.textContent = `${p.display.left}  ⚖  ${p.display.right}`;
+  el.puzzleDisplay.appendChild(box);
+  buildOptionButtons(p, 'cols-4');
+}
+function renderGridPath(p) {
+  const grid = document.createElement('div');
+  grid.className = 'shape-grid';
+  grid.style.gridTemplateColumns = `repeat(${p.display.size}, 48px)`;
+  for (let i=0;i<p.display.size*p.display.size;i++) {
+    const cell = document.createElement('div');
+    cell.className = 'shape-cell' + (p.display.path.includes(i) ? ' lit' : '');
+    cell.textContent = p.display.path.includes(i) ? '●' : '';
+    cell.setAttribute('aria-label', p.display.path.includes(i) ? 'path cell' : 'empty cell');
+    grid.appendChild(cell);
+  }
+  el.puzzleDisplay.appendChild(grid);
+  buildOptionButtons(p, 'cols-4');
+}
+function renderCodeBreaker(p) {
+  const box = document.createElement('div');
+  box.className = 'letter-rack';
+  p.display.slots.forEach(slot => { const chip=document.createElement('span'); chip.className='letter-chip'; chip.textContent=slot; box.appendChild(chip); });
+  const clues = document.createElement('p'); clues.textContent = p.display.clues.join(' · ');
+  el.puzzleDisplay.append(box, clues);
+  buildOptionButtons(p, 'cols-4');
+}
+function renderProbability(p) {
+  const box = document.createElement('div');
+  box.className = 'puzzle-display-card';
+  box.textContent = `${p.display.favourable} winning faces ÷ ${p.display.total} total faces`;
+  el.puzzleDisplay.appendChild(box);
+  buildOptionButtons(p, 'cols-4');
+}
+function renderWordTransform(p) {
+  const box = document.createElement('div');
+  box.className = 'puzzle-display-card';
+  box.textContent = `${p.display.from}  →  ?`;
+  el.puzzleDisplay.appendChild(box);
+  buildOptionButtons(p, 'cols-2');
 }
 
 /* ── SEQUENCE RENDERER ───────────────────────────────────────────── */
@@ -374,6 +456,73 @@ function renderShapeMatrix(p) {
   });
   el.puzzleDisplay.appendChild(table);
   buildOptionButtons(p, 'cols-4');
+}
+
+/* ── SPATIAL TRANSFORMATION ─────────────────────────────────────── */
+function renderSpatialRotation(p) {
+  const track = document.createElement('div');
+  track.className = 'rotation-track';
+  p.display.rotations.forEach((rotation, index) => {
+    if (index) {
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '→';
+      track.appendChild(arrow);
+    }
+    const tile = document.createElement('div');
+    tile.className = 'rotation-tile';
+    tile.innerHTML = `<span style="transform:rotate(${rotation}deg)">${p.display.shape}</span>`;
+    track.appendChild(tile);
+  });
+  const arrow = document.createElement('span');
+  arrow.className = 'arrow';
+  arrow.textContent = '→';
+  track.appendChild(arrow);
+  const blank = document.createElement('div');
+  blank.className = 'rotation-tile blank';
+  blank.textContent = '?';
+  track.appendChild(blank);
+  el.puzzleDisplay.appendChild(track);
+  buildOptionButtons(p, 'cols-4');
+}
+
+/* ── WORD / LETTER LOGIC ────────────────────────────────────────── */
+function renderWordLogic(p) {
+  const letters = document.createElement('div');
+  letters.className = 'letter-rack';
+  p.display.letters.forEach(letter => {
+    const tile = document.createElement('span');
+    tile.className = 'letter-chip';
+    tile.textContent = letter;
+    letters.appendChild(tile);
+  });
+  el.puzzleDisplay.appendChild(letters);
+  buildOptionButtons(p, 'cols-2');
+}
+
+/* ── ORDERING / PRIORITY ────────────────────────────────────────── */
+function renderPriorityOrder(p) {
+  const panel = document.createElement('div');
+  panel.className = 'priority-panel';
+  const list = document.createElement('div');
+  list.className = 'priority-items';
+  p.display.items.forEach(item => {
+    const chip = document.createElement('span');
+    chip.className = 'priority-chip';
+    chip.textContent = item;
+    list.appendChild(chip);
+  });
+  const rules = document.createElement('div');
+  rules.className = 'priority-rules';
+  p.display.rules.forEach(rule => {
+    const row = document.createElement('p');
+    row.textContent = rule;
+    rules.appendChild(row);
+  });
+  panel.appendChild(list);
+  panel.appendChild(rules);
+  el.puzzleDisplay.appendChild(panel);
+  buildOptionButtons(p, 'cols-2');
 }
 
 /* ── ODD ONE OUT RENDERER ────────────────────────────────────────── */
@@ -725,6 +874,7 @@ function handleAnswer(value, clickedBtn) {
 
   if (correct) {
     G.score += pts;
+    if (G.mode === 'duo') G.playerScores[G.player - 1] += pts;
     G.streak++;
     G.bestStreak = Math.max(G.bestStreak, G.streak);
     SoundFX.correct();
@@ -741,6 +891,10 @@ function handleAnswer(value, clickedBtn) {
     answer: G.puzzle.answer,
     type: G.puzzle.type,
     subtype: G.puzzle.subtype,
+    explanation: G.puzzle.explanation,
+    puzzle: G.puzzle,
+    time: Math.max(0, G.maxTime - G.timeLeft),
+    hintUsed: G.hintUsed,
     attnErrors: G.attnErrors,
   });
 
@@ -750,6 +904,7 @@ function handleAnswer(value, clickedBtn) {
   markDot(G.round, correct ? 'correct' : 'wrong');
 
   G.round++;
+  if (G.mode === 'duo') G.player = G.player === 1 ? 2 : 1;
   setTimeout(nextRound, 1400);
 }
 
@@ -782,6 +937,7 @@ function highlightButtons(correct, chosenValue, clickedBtn) {
 
 /* ── FEEDBACK TOAST ──────────────────────────────────────────────── */
 function showFeedback(type, correct, pts) {
+  if (G.mode === 'exam') return;
   el.feedbackToast.className = 'feedback-toast ' + type + '-fb';
   if (type === 'correct') {
     el.feedbackIcon.textContent = '✓';
@@ -790,7 +946,7 @@ function showFeedback(type, correct, pts) {
     el.feedbackIcon.textContent = '✗';
     el.feedbackText.textContent = `Wrong. Answer: ${G.puzzle.answer}`;
   } else {
-    el.feedbackIcon.textContent = '⏱';
+    el.feedbackIcon.innerHTML = '<svg class="ui-icon"><use href="ui-icons.svg#timer"/></svg>';
     el.feedbackText.textContent = 'Time\'s up!';
   }
   el.feedbackToast.classList.remove('hidden');
@@ -798,8 +954,8 @@ function showFeedback(type, correct, pts) {
 }
 
 /* ── TIMER ───────────────────────────────────────────────────────── */
-function startTimer() {
-  G.timeLeft = G.maxTime;
+function startTimer(resume = false) {
+  if (!resume) G.timeLeft = G.maxTime;
   updateTimerUI(1);
   G.timerInterval = setInterval(() => {
     G.timeLeft = Math.max(0, G.timeLeft - 0.1);
@@ -831,7 +987,7 @@ function onTimeout() {
   if (G.answered) return;
   G.answered = true;
   G.streak = 0;
-  G.results.push({ correct: false, timeout: true, pts: 0, value: null, answer: G.puzzle.answer, type: G.puzzle.type, subtype: G.puzzle.subtype });
+  G.results.push({ correct: false, timeout: true, pts: 0, value: null, answer: G.puzzle.answer, type: G.puzzle.type, subtype: G.puzzle.subtype, explanation: G.puzzle.explanation, puzzle: G.puzzle, time: G.maxTime, hintUsed: G.hintUsed });
 
   el.answerArea.querySelectorAll('button, input').forEach(b => b.disabled = true);
   el.answerArea.querySelectorAll('.opt-btn, .color-opt-btn').forEach(btn => {
@@ -843,6 +999,7 @@ function onTimeout() {
   showFeedback('timeout', false, 0);
   markDot(G.round, 'timeout');
   G.round++;
+  if (G.mode === 'duo') G.player = G.player === 1 ? 2 : 1;
   setTimeout(nextRound, 1400);
 }
 
@@ -875,20 +1032,21 @@ function showResults() {
   showScreen('results');
 
   const correct = G.results.filter(r => r.correct).length;
-  const accuracy = Math.round((correct / G.totalRounds) * 100);
+  const denominator = G.results.length || G.totalRounds;
+  const accuracy = Math.round((correct / denominator) * 100);
 
   // Emoji & title
   let emoji, title;
-  if (accuracy >= 90) { emoji = '🏆'; title = 'Exceptional!'; }
-  else if (accuracy >= 70) { emoji = '🎯'; title = 'Great Work!'; }
-  else if (accuracy >= 50) { emoji = '💪'; title = 'Keep Training!'; }
-  else { emoji = '🧠'; title = 'Practice Makes Perfect'; }
+  if (accuracy >= 90) { emoji = 'target'; title = 'Exceptional!'; }
+  else if (accuracy >= 70) { emoji = 'target'; title = 'Great Work!'; }
+  else if (accuracy >= 50) { emoji = 'bolt'; title = 'Keep Training!'; }
+  else { emoji = 'brain'; title = 'Practice Makes Perfect'; }
 
-  el.resultEmoji.textContent = emoji;
+  el.resultEmoji.innerHTML = iconSvg(emoji);
   el.resultTitle.textContent = title;
   el.resultQuote.textContent = accuracy >= 50 ? PuzzleQuotes.random() : PuzzleQuotes.wrong();
   el.finalScore.textContent = G.score;
-  el.finalCorrect.textContent = `${correct}/${G.totalRounds}`;
+  el.finalCorrect.textContent = `${correct}/${denominator}`;
   el.finalAccuracy.textContent = accuracy + '%';
   el.finalStreak.textContent = G.bestStreak;
 
@@ -897,7 +1055,7 @@ function showResults() {
   G.results.forEach((r, i) => {
     const item = document.createElement('div');
     item.className = 'rt-item ' + (r.correct ? 'correct' : r.timeout ? 'timeout' : 'wrong');
-    item.textContent = i + 1;
+    item.innerHTML = `<span class="rt-number">${i + 1}</span><span class="rt-detail"><strong>${r.type || 'Puzzle'}</strong> · ${r.correct ? 'Correct' : r.timeout ? 'Timed out' : 'Incorrect'}<br><small>Your answer: ${r.value ?? '—'} · Correct: ${r.answer}<br>${r.explanation || ''} · ${Math.round(r.time || 0)}s${r.hintUsed ? ' · hint used' : ''}</small></span>`;
     item.title = r.correct ? `Correct +${r.pts}` : (r.timeout ? 'Timeout' : `Wrong (${r.answer})`);
     el.roundTimeline.appendChild(item);
   });
@@ -907,7 +1065,7 @@ function showResults() {
 
   // ── SAVE TO STORAGE ──
   const sessionData = {
-    score: G.score, correct, total: G.totalRounds,
+    score: G.score, correct, total: denominator,
     accuracy, bestStreak: G.bestStreak,
     avgReaction: G.reactionTimes.length ? Math.round(G.reactionTimes.reduce((a, b) => a + b, 0) / G.reactionTimes.length) : null,
     bestReaction: G.reactionTimes.length ? Math.min(...G.reactionTimes) : null,
@@ -916,6 +1074,7 @@ function showResults() {
     logicStreak: longestTypeStreak('logic'),
     mathStreak: longestTypeStreak('math'),
     attentionAce: G.results.some(r => r.type === 'attention' && r.correct && (r.attnErrors || 0) === 0),
+    results: G.results, mode: G.mode,
   };
 
   Store.saveScore(G.mode, {
@@ -935,11 +1094,11 @@ function showResults() {
   const newAch = AchievementSystem.check(sessionData, G);
   if (newAch.length) {
     el.achievementsUnlocked.classList.remove('hidden');
-    el.achievementsUnlocked.innerHTML = '<p class="ach-section-title">🎉 Achievements Unlocked!</p>';
+    el.achievementsUnlocked.innerHTML = `<p class="ach-section-title">${iconSvg('target')} Achievements Unlocked!</p>`;
     newAch.forEach(a => {
       const badge = document.createElement('div');
       badge.className = 'ach-badge tier-' + a.tier;
-      badge.innerHTML = `<span class="ach-badge-icon">${a.icon}</span><span class="ach-badge-name">${a.name}</span>`;
+      badge.innerHTML = `<span class="ach-badge-icon">${iconSvg(a.icon)}</span><span class="ach-badge-name">${a.name}</span>`;
       el.achievementsUnlocked.appendChild(badge);
       showAchievementToast(a);
     });
@@ -968,7 +1127,7 @@ function drainAchQueue() {
   achShowing = true;
   const a = achQueue.shift();
   SoundFX.achievement();
-  el.achIcon.textContent = a.icon;
+  el.achIcon.innerHTML = iconSvg(a.icon);
   el.achName.textContent = a.name;
   el.achievementToast.classList.remove('hidden');
   setTimeout(() => {
@@ -1095,7 +1254,7 @@ function populateStatsPanel() {
     const card = document.createElement('div');
     card.className = 'ach-card' + (a.unlocked ? ' unlocked' : ' locked') + ' tier-' + a.tier;
     card.innerHTML = `
-      <span class="ach-card-icon">${a.unlocked ? a.icon : '🔒'}</span>
+      <span class="ach-card-icon">${iconSvg(a.unlocked ? a.icon : 'settings')}</span>
       <div class="ach-card-info">
         <span class="ach-card-name">${a.name}</span>
         <span class="ach-card-desc">${a.desc}</span>
@@ -1124,10 +1283,7 @@ function populateStatsPanel() {
 
 el.exportDataBtn.addEventListener('click', () => Store.exportData());
 el.clearDataBtn.addEventListener('click', () => {
-  if (confirm('Delete all saved data? This cannot be undone.')) {
-    Store.clearAll();
-    populateStatsPanel();
-  }
+  appModal('Delete all saved data? A backup will be kept on this device.', true, () => { Store.clearAll(); populateStatsPanel(); });
 });
 
 /* ── RESULTS BUTTONS ─────────────────────────────────────────────── */
@@ -1136,3 +1292,181 @@ el.playAgainBtn.addEventListener('click', () => {
   startGame();
 });
 el.mainMenuBtn.addEventListener('click', () => showScreen('splash'));
+
+/* ── EXPANSION FEATURES ────────────────────────────────────────── */
+const enhancement = {
+  categoryButtons: document.querySelectorAll('.category-btn'),
+  planBtn: $('planBtn'), customBtn: $('customBtn'), examBtn: $('examBtn'), duoBtn: $('duoBtn'),
+  minuteBtn: $('minuteBtn'), endlessBtn: $('endlessBtn'), settingsBtn: $('settingsBtn'),
+  installBtn: $('installBtn'), shareBtn: $('shareBtn'), reviewBtn: $('reviewBtn'),
+  practiceBtn: $('practiceMistakesBtn'), categoryStats: $('categoryStats'), mistakesList: $('mistakesList'),
+  gameCards: document.querySelectorAll('.game-card'), customModal: $('customModal'),
+  closeCustomBtn: $('closeCustomBtn'), launchCustomBtn: $('launchCustomBtn'),
+  customRounds: $('customRounds'), customRoundsValue: $('customRoundsValue'),
+  customCategory: $('customCategory'), customDifficulty: $('customDifficulty'),
+  importDataBtn: $('importDataBtn'), onboardingModal: $('onboardingModal'), onboardingClose: $('onboardingClose'),
+  settingsModal: $('settingsModal'), settingsClose: $('settingsClose'),
+};
+const statsNavBtn = $('statsNavBtn');
+if (statsNavBtn) statsNavBtn.addEventListener('click', () => { populateStatsPanel(); showScreen('stats'); });
+
+enhancement.categoryButtons.forEach(btn => btn.addEventListener('click', () => {
+  enhancement.categoryButtons.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); G.category = btn.dataset.category;
+}));
+enhancement.customBtn.addEventListener('click', () => {
+  enhancement.customModal.classList.remove('hidden');
+  enhancement.customRounds.focus();
+});
+enhancement.examBtn.addEventListener('click', () => {
+  appModal('42 Exam Simulation: 42 timed questions, no hints, no pause, and feedback only at the end. Ready?', true, () => {
+    G.mode = 'exam'; G.category = 'all'; G.difficulty = 'hard'; startGame();
+  });
+});
+enhancement.duoBtn.addEventListener('click', () => {
+  const first = (window.prompt('Player 1 name', 'Player 1') || 'Player 1').slice(0,24);
+  const second = (window.prompt('Player 2 name', 'Player 2') || 'Player 2').slice(0,24);
+  G.playerNames = [first, second];
+  appModal(`${first} vs ${second}: take turns and pass the device after each answer.`, false, () => {
+    G.mode = 'duo'; G.category = 'all'; G.player = 1; G.playerScores = [0, 0]; startGame();
+  });
+});
+enhancement.minuteBtn.addEventListener('click', () => { G.mode = 'minute'; G.category = 'all'; startGame(); });
+enhancement.endlessBtn.addEventListener('click', () => { G.mode = 'endless'; G.category = 'all'; startGame(); });
+enhancement.planBtn.addEventListener('click', () => {
+  const s = Store.getStats(), cats = ['logic','memory','math','attention'];
+  const weakest = cats.sort((a,b) => ((s.categoryCorrect[a]||0)/(s.categoryAnswered[a]||1))-((s.categoryCorrect[b]||0)/(s.categoryAnswered[b]||1)))[0];
+  const plan = { category: weakest, rounds: 10, created: Date.now() };
+  Store.savePlan(plan); G.mode = 'plan'; G.category = weakest; G.difficulty = 'normal'; startGame();
+});
+enhancement.practiceBtn.addEventListener('click', () => {
+  G.mode = 'mistakes'; G.category = 'all'; G.difficulty = 'normal'; startGame();
+});
+enhancement.reviewBtn.addEventListener('click', () => {
+  showScreen('stats'); document.querySelector('[data-tab="mistakes"]').click();
+});
+enhancement.gameCards.forEach(card => card.addEventListener('click', () => {
+  const game = card.dataset.game;
+  if (game === 'exam') {
+    G.mode = 'exam'; G.category = 'all'; G.difficulty = 'hard';
+  } else {
+    G.mode = 'training'; G.category = game; G.difficulty = document.querySelector('.diff-btn.active')?.dataset.diff || 'normal';
+  }
+  startGame();
+}));
+enhancement.customRounds.addEventListener('input', () => {
+  enhancement.customRoundsValue.value = enhancement.customRounds.value;
+  enhancement.customRoundsValue.textContent = enhancement.customRounds.value;
+});
+function closeCustomModal() { enhancement.customModal.classList.add('hidden'); }
+enhancement.closeCustomBtn.addEventListener('click', closeCustomModal);
+enhancement.customModal.addEventListener('click', e => { if (e.target === enhancement.customModal) closeCustomModal(); });
+enhancement.launchCustomBtn.addEventListener('click', () => {
+  G.customRounds = Number(enhancement.customRounds.value);
+  G.category = enhancement.customCategory.value;
+  G.difficulty = enhancement.customDifficulty.value;
+  G.mode = 'custom';
+  closeCustomModal();
+  startGame();
+});
+enhancement.shareBtn.addEventListener('click', async () => {
+  const text = `42 Brain result: ${el.finalScore.textContent} points, ${el.finalAccuracy.textContent} accuracy.`;
+  if (navigator.share) { try { await navigator.share({ title: '42 Brain', text }); } catch (_) {} }
+  else if (navigator.clipboard) { await navigator.clipboard.writeText(text); enhancement.shareBtn.textContent = '✅ Copied!'; }
+});
+
+function appModal(message, confirmMode, yes) {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `<div class="modal-card" role="alertdialog"><p>${message}</p><div class="feature-actions"><button class="sec-btn modal-cancel">Cancel</button><button class="cta-btn modal-ok">${confirmMode ? 'Continue' : 'OK'}</button></div></div>`;
+  document.body.appendChild(backdrop);
+  backdrop.querySelector('.modal-cancel').onclick = () => backdrop.remove();
+  backdrop.querySelector('.modal-ok').onclick = () => { backdrop.remove(); if (yes) yes(); };
+}
+
+enhancement.importDataBtn.addEventListener('click', () => {
+  const input = Object.assign(document.createElement('input'), { type: 'file', accept: 'application/json' });
+  input.onchange = () => {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload=JSON.parse(reader.result);
+        if (!Store.validateImport(payload)) throw new Error('invalid');
+        const games=payload.stats.totalGames||0, mistakes=(payload.stats.mistakes||[]).length;
+        appModal(`Backup preview: ${games} games and ${mistakes} saved mistakes. Replace your local progress?`, true, () => {
+          Store.importData(payload); applyTheme(Store.getSettings().theme); populateStatsPanel(); appModal('Backup restored successfully.', false);
+        });
+      } catch (e) { appModal('That backup is not valid or is missing required fields.', false); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+enhancement.settingsBtn.addEventListener('click', () => {
+  const s = Store.getSettings();
+  ['largeText','highContrast','colorblind','reducedMotion','sound'].forEach(k => { const node = $(k + 'Setting') || $(k === 'reducedMotion' ? 'motionSetting' : ''); if (node) node.checked = !!s[k]; });
+  enhancement.settingsModal.classList.remove('hidden');
+});
+enhancement.settingsClose.addEventListener('click', () => enhancement.settingsModal.classList.add('hidden'));
+enhancement.settingsModal.addEventListener('change', e => {
+  const map = { largeTextSetting:'largeText', contrastSetting:'highContrast', colorblindSetting:'colorblind', motionSetting:'reducedMotion', soundSetting:'sound' };
+  const key = map[e.target.id]; if (!key) return;
+  const s = Store.getSettings(); s[key] = e.target.checked; Store.saveSettings(s);
+  document.body.classList.toggle('large-text', s.largeText); document.body.classList.toggle('high-contrast', s.highContrast);
+  document.body.classList.toggle('colorblind', s.colorblind); document.body.classList.toggle('reduce-motion', s.reducedMotion); SoundFX.enable(s.sound);
+});
+if (!Store.get('onboarded', false)) enhancement.onboardingModal.classList.remove('hidden');
+enhancement.onboardingClose.addEventListener('click', () => { Store.set('onboarded', true); enhancement.onboardingModal.classList.add('hidden'); });
+
+/* Category statistics, mistake explanations, and plan progress. */
+const oldPopulateStatsPanel = populateStatsPanel;
+populateStatsPanel = function expandedStats() {
+  oldPopulateStatsPanel();
+  const s = Store.getStats(), cats = ['logic','memory','math','attention'];
+  enhancement.categoryStats.innerHTML = '<h3>Category accuracy</h3>' + cats.map(c => {
+    const n=s.categoryAnswered[c]||0, pct=n?Math.round((s.categoryCorrect[c]||0)/n*100):0;
+    return `<div class="category-stat"><strong>${c}</strong> ${pct}% (${s.categoryCorrect[c]||0}/${n})</div>`;
+  }).join('') + `<div class="plan-card"><strong>Level ${Store.levelInfo().level}</strong> · ${Store.levelInfo().xp} XP<div class="xp-bar"><div class="xp-fill" style="width:${Store.levelInfo().current/10}%"></div></div></div>`;
+  drawDashboardCharts(s, cats);
+  const mistakes = s.mistakes || [];
+  enhancement.mistakesList.innerHTML = mistakes.length ? mistakes.slice(0,20).map((m,i) =>
+    `<article class="mistake-card" data-mistake="${i}"><strong>${m.type || 'Puzzle'}</strong> · ${m.subtype || ''}<br>Your answer: <code>${m.value ?? 'timeout'}</code> · Correct: <code>${m.answer}</code><br><small>${m.explanation || 'Review the rule and try again.'}</small><div class="mistake-actions"><button class="sec-btn mistake-retry" data-index="${i}">Retry</button><button class="sec-btn mistake-master" data-index="${i}">Mark mastered</button></div></article>`).join('') : '<p>No mistakes saved yet — excellent!</p>';
+};
+enhancement.mistakesList.addEventListener('click', e => {
+  const i=Number(e.target.dataset.index);
+  if (!Number.isInteger(i)) return;
+  if (e.target.classList.contains('mistake-master')) { Store.markMistakeMastered(i); populateStatsPanel(); }
+  if (e.target.classList.contains('mistake-retry')) { G.mode='mistakes'; G.practiceQueue=[Store.getStats().mistakes[i]].filter(Boolean); startGame(); }
+});
+
+function drawDashboardCharts(stats, cats) {
+  const paint = (canvas, values, labels, color) => {
+    if (!canvas || !canvas.getContext) return;
+    const ctx=canvas.getContext('2d'), w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h); ctx.font='12px system-ui'; ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--text2');
+    const max=Math.max(1,...values), step=w/Math.max(1,values.length);
+    values.forEach((v,i) => { const bar=(v/max)*(h-34); ctx.fillStyle=color; ctx.fillRect(i*step+8,h-bar-20,Math.max(12,step-16),bar); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--text2'); ctx.textAlign='center'; ctx.fillText(labels[i],i*step+step/2,h-5); ctx.fillText(String(v),i*step+step/2,h-bar-25); });
+  };
+  const accuracy=cats.map(c => { const n=stats.categoryAnswered[c]||0; return n ? Math.round((stats.categoryCorrect[c]||0)/n*100) : 0; });
+  paint(el.categoryCanvas, accuracy, cats, '#2563eb');
+  const history=(stats.sessions||[]).slice(-10).map(x=>x.score||0);
+  paint(el.historyCanvas, history, history.map((_,i)=>String(i+1)), '#16a34a');
+  const weakest=cats.reduce((a,b)=>accuracy[cats.indexOf(a)]<=accuracy[cats.indexOf(b)]?a:b,cats[0]);
+  if (el.weakestCategory) el.weakestCategory.textContent=`Focus next: ${weakest} (${accuracy[cats.indexOf(weakest)]}% accuracy). XP ${Store.levelInfo().xp} · Level ${Store.levelInfo().level}.`;
+}
+
+let deferredInstall;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; enhancement.installBtn.classList.remove('hidden'); });
+enhancement.installBtn.addEventListener('click', async () => { if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; } });
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').then(reg => {
+  if (reg.waiting) showUpdateNotice(reg);
+  reg.addEventListener('updatefound', () => {
+    const worker=reg.installing;
+    if (worker) worker.addEventListener('statechange', () => { if (worker.state==='installed' && navigator.serviceWorker.controller) showUpdateNotice(reg); });
+  });
+}).catch(() => {}));
+window.addEventListener('offline', () => showNetworkNotice('Offline mode — progress is saved on this device.'));
+window.addEventListener('online', () => showNetworkNotice('Back online — your progress is synced locally.'));
+function showNetworkNotice(message) { let n=$('networkNotice'); if (!n) { n=document.createElement('div'); n.id='networkNotice'; n.className='network-notice'; document.body.appendChild(n); } n.textContent=message; n.classList.add('visible'); setTimeout(()=>n.classList.remove('visible'),3200); }
+function showUpdateNotice(reg) { showNetworkNotice('A new version is ready. Tap to update.'); const n=$('networkNotice'); if (n) n.onclick=()=>{ reg.waiting?.postMessage('SKIP_WAITING'); window.location.reload(); }; }

@@ -1,0 +1,14 @@
+{
+  "name": "42 Brain — Logic & Memory Trainer",
+  "short_name": "42 Brain",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f111a",
+  "theme_color": "#2563eb",
+  "description": "Offline logic, memory and speed training.",
+  "scope": "./",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,6 +1,7 @@
 /**
  * puzzles.js – Complete puzzle generator for 42 Brain Trainer
  * Types: Logic · Memory · Reaction · Attention · MentalMath · OddOneOut
+ * Includes spatial transformation, word logic, and priority ordering challenges.
  */
 'use strict';
 
@@ -226,6 +227,63 @@ function genDeductionPuzzle(d) {
   };
 }
 
+/* ── LOGIC: NEW PUZZLE FAMILIES ─────────────────────────────────── */
+
+function genSpatialRotation(d) {
+  const shape = pick(['▲', '▶', '◆', '⬟', '★']);
+  const step = pick([90, 180]);
+  const turns = 2 + Math.min(d, 2);
+  const rotations = Array.from({ length: turns }, (_, i) => (i * step) % 360);
+  const answer = (rotations[rotations.length - 1] + step) % 360;
+  const options = shuffle([answer, ...[0, 90, 180, 270].filter(v => v !== answer).slice(0, 3)]).map(v => `${v}°`);
+  return {
+    type: 'logic', subtype: 'spatial_rotation',
+    instruction: '🧭 The shape turns by the same amount each step. What comes next?',
+    hint: `Track the rotation: each step turns ${step}° clockwise.`,
+    display: { shape, rotations, step },
+    answer: `${answer}°`, options, renderFn: 'renderSpatialRotation',
+    explanation: `The shape rotates ${step}° clockwise each time, so the next position is ${answer}°.`,
+  };
+}
+
+function genWordLogic(d) {
+  const words = [
+    ['PLANET', 'PENCIL', 'POCKET', 'PILLOW'],
+    ['SILENT', 'SILVER', 'SIMPLE', 'SUNSET'],
+    ['STREAM', 'SPRING', 'SQUARE', 'STREET'],
+    ['CREDIT', 'CIRCLE', 'CANDLE', 'CAMERA'],
+    ['BRAIN', 'BRICK', 'BRUSH', 'BREAD'],
+  ];
+  const set = pick(words);
+  const answer = set[0];
+  const letters = shuffle(answer.split(''));
+  return {
+    type: 'logic', subtype: 'word_logic',
+    instruction: '🔤 Rearrange the letters to find the hidden word.',
+    hint: `Use every letter exactly once: ${letters.join(' · ')}`,
+    display: { letters, letterCount: letters.length },
+    answer, options: shuffle(set), renderFn: 'renderWordLogic',
+    explanation: `${letters.join('')} can be rearranged to spell “${answer}”.`,
+  };
+}
+
+function genPriorityOrder(d) {
+  const sets = [
+    { items: ['Deploy', 'Design', 'Test', 'Plan'], rules: ['Plan happens before Design', 'Design happens before Test', 'Test happens before Deploy'], answer: 'Plan' },
+    { items: ['Breakfast', 'Exercise', 'Shower', 'Work'], rules: ['Exercise is before Shower', 'Shower is before Work', 'Breakfast is before Work'], answer: 'Breakfast' },
+    { items: ['Research', 'Draft', 'Review', 'Publish'], rules: ['Research is before Draft', 'Draft is before Review', 'Review is before Publish'], answer: 'Research' },
+  ];
+  const set = pick(sets);
+  return {
+    type: 'logic', subtype: 'priority_order',
+    instruction: '📌 Which task must come first?',
+    hint: 'Follow the dependency chain and find the item with no prerequisite.',
+    display: { items: shuffle(set.items), rules: set.rules },
+    answer: set.answer, options: shuffle(set.items), renderFn: 'renderPriorityOrder',
+    explanation: `${set.answer} has no prerequisite, so it must come first in the valid order.`,
+  };
+}
+
 /* ── MENTAL MATH ─────────────────────────────────────────────────── */
 
 function genMentalMath(d) {
@@ -402,6 +460,53 @@ function genVisualSearch(d) {
   };
 }
 
+/* ── NEW GAME LAB PUZZLES ───────────────────────────────────────── */
+function genBalanceScale(d) {
+  const left = rand(2, 8), right = rand(2, 8), hidden = rand(1, 5);
+  const answer = right + hidden - left;
+  return { type:'logic', subtype:'balance_scale',
+    instruction:'⚖️ A balanced scale has equal weight. What weight is missing?',
+    hint:'Total weight on the left must equal total weight on the right.',
+    display:{ left:`${left} + ?`, right:String(right + hidden), equation:`${left} + ? = ${right + hidden}` },
+    answer:String(answer), options:genNumericOptions(answer,d), renderFn:'renderBalanceScale' };
+}
+function genGridPath(d) {
+  const size = 3 + Math.min(1,d), cells = size * size, path = [];
+  for (let i=0;i<size;i++) path.push(i * size + i);
+  const answer = String(path.length);
+  return { type:'attention', subtype:'grid_path',
+    instruction:'🧭 Count the diagonal path from start to finish.',
+    hint:'Follow the connected marked cells from the top-left corner.',
+    display:{ size, path }, answer, options:genNumericOptions(Number(answer),d), renderFn:'renderGridPath' };
+}
+function genCodeBreaker(d) {
+  const code = Array.from({length:3},()=>rand(1,6));
+  const clues = code.map((n,i)=>`Slot ${i+1} is ${n}`).slice(0, 2);
+  return { type:'logic', subtype:'code_breaker',
+    instruction:'🔐 Crack the three-digit code from the clues.',
+    hint:'Use the revealed slots, then infer the remaining digit from the set 1–6.',
+    display:{ clues, slots:code.map((n,i)=>i<2?n:'?') },
+    answer:String(code[2]), options:genNumericOptions(code[2],d), renderFn:'renderCodeBreaker' };
+}
+function genProbability(d) {
+  const favourable = rand(1,4), total = 6;
+  const answer = `${favourable}/${total}`;
+  return { type:'math', subtype:'probability',
+    instruction:`🎲 A die has ${favourable} winning face${favourable===1?'':'s'} out of ${total}. What is the probability?`,
+    hint:'Probability = favourable outcomes ÷ total outcomes.',
+    display:{ favourable, total }, answer, options:shuffle([answer,`${total-favourable}/${total}`,`1/${total}`,`${favourable}/${total+1}`]), renderFn:'renderProbability' };
+}
+function genWordTransform(d) {
+  const sets = [{from:'COLD',to:'WARM'},{from:'CAT',to:'DOG'},{from:'MIND',to:'BRAIN'}];
+  const set = pick(sets), letters = set.from.split('');
+  return { type:'logic', subtype:'word_transform',
+    instruction:`🔤 Transform “${set.from}” into “${set.to}” by changing one letter at a time.`,
+    hint:'Choose the target word that has the same number of letters.',
+    display:{ from:set.from, to:set.to }, answer:set.to,
+    options:shuffle([set.to, ...sets.filter(x=>x.to!==set.to && x.to.length===set.to.length).map(x=>x.to), set.from]).slice(0,4),
+    renderFn:'renderWordTransform' };
+}
+
 /* ── CUSTOM PUZZLES ─────────────────────────────────────────────── */
 
 function genCustomPuzzle() {
@@ -452,11 +557,11 @@ window.PuzzleQuotes = { random: () => pick(MOTIVATION), wrong: () => pick(ENCOUR
 
 window.PuzzleEngine = {
 
-  _logicGens:  [genArithmetic, genGeometric, genFibonacci, genPrimes, genSquares, genShapeMatrix, genOddOneOut, genFindTheRule, genDeductionPuzzle],
+  _logicGens:  [genArithmetic, genGeometric, genFibonacci, genPrimes, genSquares, genShapeMatrix, genOddOneOut, genFindTheRule, genDeductionPuzzle, genSpatialRotation, genWordLogic, genPriorityOrder, genBalanceScale, genCodeBreaker, genWordTransform],
   _memGens:    [genMemoryNumbers, genMemoryColors, genMemoryPositions, genMemoryOrder, genMemoryLetters],
-  _mathGens:   [genMentalMath, genMathSequence],
+  _mathGens:   [genMentalMath, genMathSequence, genProbability],
   _reactGens:  [genReactionTime],
-  _attnGens:   [genAttentionFocus, genVisualSearch],
+  _attnGens:   [genAttentionFocus, genVisualSearch, genGridPath],
 
   generate(round, diffSetting, totalRounds, forcedType, seededRandom) {
     const rng  = seededRandom || Math.random.bind(Math);
@@ -464,7 +569,7 @@ window.PuzzleEngine = {
     const d    = clamp(base + Math.floor(round / Math.max(1, totalRounds/3)), base, base+3);
 
     // Weight each category based on round progression
-    if (forcedType === 'custom') return genCustomPuzzle();
+    if (forcedType === 'custom') return decoratePuzzle(genCustomPuzzle());
 
     let category;
     if (forcedType && forcedType !== 'all') {
@@ -488,7 +593,8 @@ window.PuzzleEngine = {
       reaction:'_reactGens', attention:'_attnGens',
     };
     const gens = this[genMap[category] || '_logicGens'];
-    return pick(gens)(d);
+    const puzzle = pick(gens)(d);
+    return decoratePuzzle(puzzle);
   },
 
   generateDaily(round, totalRounds) {
@@ -499,3 +605,31 @@ window.PuzzleEngine = {
     return this.generate(round, diffMap[clamp(diffIdx,0,3)], totalRounds, null, srng);
   },
 };
+
+function decoratePuzzle(p) {
+  const rules = {
+    arithmetic: 'Look at the constant difference between adjacent numbers.',
+    geometric: 'Each term is multiplied by the same ratio.',
+    fibonacci: 'Add the previous two terms together.',
+    primes: 'The sequence contains consecutive prime numbers.',
+    squares: 'Each value is a consecutive whole number squared.',
+    odd_one_out: 'Compare each option against the shared property.',
+    mem_numbers: 'Recall the numbers in their original order.',
+    mem_letters: 'Recall the letters exactly as displayed.',
+    mem_colors: 'Recall the color sequence from left to right.',
+    mem_positions: 'Recall which grid cells were lit.',
+    reaction_time: 'Wait for the green/go signal, then react quickly.',
+    attention_focus: 'Find every target while avoiding distractors.',
+    spatial_rotation: 'The shape advances by the same clockwise rotation each step.',
+    word_logic: 'Rearrange every displayed letter once to identify the word.',
+    priority_order: 'A task with no prerequisite must begin the dependency chain.',
+    balance_scale: 'Subtract the known weight from the opposite side to balance both sides.',
+    grid_path: 'Trace the marked diagonal cells and count each connected step.',
+    code_breaker: 'The clues reveal the first slots; the remaining slot is the missing digit.',
+    probability: 'Divide favourable outcomes by all possible outcomes.',
+    word_transform: 'Each move changes one letter while preserving the word length.',
+  };
+  p.explanation = p.explanation || rules[p.subtype] || 'Use the rule described in the question and compare each option.';
+  p.id = `${p.type || 'puzzle'}-${p.subtype || 'general'}-${JSON.stringify(p.display || {}).slice(0,80)}`;
+  return p;
+}

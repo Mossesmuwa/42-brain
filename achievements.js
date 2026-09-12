@@ -4,16 +4,16 @@
 'use strict';
 
 const ACHIEVEMENTS = [
-  { id: 'first_win',       name: 'First Steps',            desc: 'Complete your very first session',                    icon: '🎯', tier: 'bronze' },
+  { id: 'first_win',       name: 'First Steps',            desc: 'Complete your very first session',                    icon: 'target', tier: 'bronze' },
   { id: 'perfect_round',   name: 'Perfectionist',          desc: 'Score 100% accuracy in any session',                  icon: '💯', tier: 'gold'   },
-  { id: 'memory_master',   name: 'Memory Master',          desc: '5 memory puzzles correct in a row',                   icon: '🧠', tier: 'silver' },
-  { id: 'speed_demon',     name: 'Speed Demon',            desc: 'Average reaction time under 400ms',                   icon: '⚡', tier: 'gold'   },
+  { id: 'memory_master',   name: 'Memory Master',          desc: '5 memory puzzles correct in a row',                   icon: 'brain', tier: 'silver' },
+  { id: 'speed_demon',     name: 'Speed Demon',            desc: 'Average reaction time under 400ms',                   icon: 'timer', tier: 'gold'   },
   { id: 'pattern_pro',     name: 'Pattern Pro',            desc: '5 logic puzzles correct in a row',                    icon: '🔮', tier: 'silver' },
   { id: 'math_whiz',       name: 'Math Whiz',              desc: '5 mental math puzzles correct in a row',              icon: '🔢', tier: 'silver' },
-  { id: 'streak_5',        name: 'On Fire!',               desc: 'Achieve a streak of 5',                               icon: '🔥', tier: 'bronze' },
+  { id: 'streak_5',        name: 'On Fire!',               desc: 'Achieve a streak of 5',                               icon: 'bolt', tier: 'bronze' },
   { id: 'streak_10',       name: 'Unstoppable',            desc: 'Achieve a streak of 10',                              icon: '🌟', tier: 'gold'   },
   { id: 'hard_mode',       name: 'Glutton for Punishment', desc: 'Finish a session on Hard difficulty',                 icon: '💀', tier: 'silver' },
-  { id: 'daily_1',         name: 'Daily Devotee',          desc: 'Complete your first daily challenge',                 icon: '📅', tier: 'bronze' },
+  { id: 'daily_1',         name: 'Daily Devotee',          desc: 'Complete your first daily challenge',                 icon: 'calendar', tier: 'bronze' },
   { id: 'daily_3',         name: 'Consistent',             desc: '3-day daily challenge streak',                        icon: '📆', tier: 'silver' },
   { id: 'daily_7',         name: 'Weekly Warrior',         desc: '7-day daily challenge streak',                        icon: '🏅', tier: 'gold'   },
   { id: 'reaction_king',   name: 'Reaction King',          desc: 'Single reaction time under 250ms',                    icon: '👑', tier: 'gold'   },
@@ -21,7 +21,7 @@ const ACHIEVEMENTS = [
   { id: 'night_owl',       name: 'Night Owl',              desc: 'Play between midnight and 4am',                       icon: '🦉', tier: 'bronze' },
   { id: 'early_bird',      name: 'Early Bird',             desc: 'Play before 7am',                                     icon: '🐦', tier: 'bronze' },
   { id: 'attention_ace',   name: 'Eagle Eye',              desc: 'Find all targets in an attention puzzle without error',icon: '🦅', tier: 'silver' },
-  { id: 'custom_warrior',  name: 'Custom Warrior',         desc: 'Complete a custom-mode session',                      icon: '⚙️', tier: 'bronze' },
+  { id: 'custom_warrior',  name: 'Custom Warrior',         desc: 'Complete a custom-mode session',                      icon: 'settings', tier: 'bronze' },
 ];
 
 const AchievementSystem = {

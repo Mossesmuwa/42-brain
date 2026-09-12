@@ -23,6 +23,12 @@ I couldn't find a good offline practice tool that actually *felt* like the real 
 
 It runs **100% offline**, needs **zero installation**, and opens straight from a file.
 
+It also includes a premium Game Lab with focused workouts for sequences, memory,
+mental math, reaction speed, visual attention, and a 42-question exam simulation.
+Progress is saved locally with XP, levels, category accuracy, mistake review,
+custom sessions, daily challenges, achievements, two-player mode, and shareable
+results.
+
 ---
 
 ## 🚀 Getting Started
@@ -100,6 +106,8 @@ Difficulty scales across rounds — early rounds are gentle, later rounds will t
 ├── style.css       # Minimalistic UI — clean, fast, no distractions
 ├── puzzles.js      # All puzzle generators with difficulty scaling
 ├── game.js         # Core engine: timer, scoring, rendering, input handling
+├── manifest.webmanifest # Installable app metadata
+├── service-worker.js # Offline app shell caching
 └── README.md       # This file (the one you're reading, hi 👋)
 ```
 

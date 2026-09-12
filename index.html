@@ -5,38 +5,132 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="42 Brain — Logic and memory trainer inspired by 42-school entrance tests. Train your cognitive skills offline." />
   <title>42 Brain — Logic & Memory Trainer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#2563eb" />
 </head>
 <body>
+  <a class="skip-link" href="#puzzleArea">Skip to puzzle</a>
 
   <!-- ── SPLASH SCREEN ─────────────────────────────────────────── -->
   <div id="splash" class="screen active">
     <div class="splash-bg"></div>
     <div class="splash-content">
-      <div class="splash-top-bar">
-        <button id="themeToggle" class="icon-btn" title="Toggle dark mode">🌙</button>
-        <button id="statsBtn" class="icon-btn" title="Stats & Achievements">📊</button>
-      </div>
-      <div class="logo-wrap">
-        <span class="logo-icon">⬡</span>
-        <h1 class="logo-text">42 Brain</h1>
-      </div>
-      <p class="splash-tagline">Logic · Memory · Speed · Precision</p>
-      <p class="splash-sub">Train like you're at the piscine.</p>
-
-      <div class="difficulty-picker">
-        <p class="picker-label">Select Difficulty</p>
-        <div class="picker-btns">
-          <button class="diff-btn" data-diff="easy">Easy</button>
-          <button class="diff-btn active" data-diff="normal">Normal</button>
-          <button class="diff-btn" data-diff="hard">Hard</button>
+      <header class="home-topbar">
+        <a class="home-brand" href="#" aria-label="42 Brain home">
+          <img class="logo-mark" src="icon.svg" alt="" aria-hidden="true" />
+          <span><strong>42 Brain</strong><small>Train with intention</small></span>
+        </a>
+        <div class="home-top-actions">
+          <span class="offline-pill"><i></i> Private & offline</span>
+          <button id="statsBtn" class="icon-btn" title="Stats & Achievements" aria-label="Stats and achievements"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg></button>
+          <button id="themeToggle" class="icon-btn" title="Toggle dark mode" aria-label="Toggle dark mode"><svg class="ui-icon"><use href="ui-icons.svg#moon"/></svg></button>
         </div>
-      </div>
+      </header>
 
-      <button id="startBtn" class="cta-btn">Start Training →</button>
-      <button id="dailyBtn" class="cta-btn daily-cta">📅 Daily Challenge</button>
+      <main class="home-main">
+        <section class="home-hero" aria-labelledby="homeTitle">
+          <div class="home-hero-copy">
+            <span class="eyebrow">Your cognitive workspace</span>
+            <h1 id="homeTitle">A sharper mind,<br><em>one session at a time.</em></h1>
+            <p>Build logic, memory, focus and planning through short challenges that fit your day. Your progress stays on this device.</p>
+            <div class="home-hero-actions">
+              <button id="workspaceLaunch" class="cta-btn"><svg class="ui-icon"><use href="ui-icons.svg#bolt"/></svg> Open your workspace</button>
+              <button id="startBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg> Quick training</button>
+            </div>
+            <div class="home-trust"><span><svg class="ui-icon"><use href="ui-icons.svg#check"/></svg> No account required</span><span><svg class="ui-icon"><use href="ui-icons.svg#lock"/></svg> Data stays local</span></div>
+          </div>
+          <div class="home-hero-art" aria-hidden="true">
+            <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+            <div class="brain-orb"><img src="icon.svg" alt="" /></div>
+            <span class="signal signal-one"><svg class="ui-icon"><use href="ui-icons.svg#bolt"/></svg></span>
+            <span class="signal signal-two"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span>
+            <span class="signal signal-three"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
+          </div>
+        </section>
+
+        <section class="home-command" aria-label="Start a session">
+          <div class="command-heading"><div><span class="eyebrow">Pick your pace</span><h2>What are you training for?</h2></div><span class="command-status"><i></i> Ready when you are</span></div>
+          <div class="command-grid">
+            <button id="dailyBtn" class="command-card command-feature"><span class="command-icon"><svg class="ui-icon"><use href="ui-icons.svg#calendar"/></svg></span><span><strong>Daily challenge</strong><small>A fresh mixed workout, every day</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
+            <button class="command-card" data-page="arcade"><span class="command-icon purple"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span><strong>Brain Arcade</strong><small>19 tactile games to explore</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
+            <button class="command-card" data-page="progress"><span class="command-icon green"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg></span><span><strong>See your progress</strong><small>Review patterns and improvements</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
+          </div>
+        </section>
+
+        <section class="home-focus-row">
+          <div class="home-focus-card">
+            <div class="section-heading"><div><span class="eyebrow">Classic trainer</span><h2>Make it a focused session</h2></div><span class="focus-badge"><svg class="ui-icon"><use href="ui-icons.svg#timer"/></svg> 5–10 min</span></div>
+            <p>Choose a difficulty and train the fundamentals: logic, memory, mental math and attention.</p>
+            <div class="difficulty-picker">
+              <p class="picker-label">Session intensity</p>
+              <div class="picker-btns">
+                <button class="diff-btn" data-diff="easy">Easy</button>
+                <button class="diff-btn active" data-diff="normal">Normal</button>
+                <button class="diff-btn" data-diff="hard">Hard</button>
+              </div>
+            </div>
+          </div>
+          <aside class="home-note"><span class="note-icon"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg></span><div><strong>Small sessions compound.</strong><p>Consistency beats intensity. Come back tomorrow and keep your streak moving.</p></div></aside>
+        </section>
+      </main>
+
+      <nav class="premium-nav" aria-label="Training navigation">
+        <section class="nav-group"><h3><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg> Quick start</h3><div class="feature-actions">
+          <button id="planBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg> Training plan</button>
+          <button id="minuteBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#timer"/></svg> One minute</button>
+          <button id="endlessBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#infinity"/></svg> Endless</button>
+        </div></section>
+        <section class="nav-group"><h3><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg> Game Lab</h3><div class="feature-actions">
+          <button id="customBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#settings"/></svg> Custom session</button>
+          <button id="examBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#flag"/></svg> Exam simulation</button>
+          <button id="duoBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#users"/></svg> Two-player</button>
+        </div></section>
+        <section class="nav-group"><h3><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg> Progress & settings</h3><div class="feature-actions">
+          <button id="statsNavBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg> Stats & review</button>
+          <button id="settingsBtn" class="sec-btn"><svg class="ui-icon"><use href="ui-icons.svg#settings"/></svg> Accessibility</button>
+        </div></section>
+      </nav>
+      <div class="category-picker" aria-label="Train by category">
+        <span>Focus:</span>
+        <button class="category-btn active" data-category="all">All</button>
+        <button class="category-btn" data-category="logic">Logic</button>
+        <button class="category-btn" data-category="memory">Memory</button>
+        <button class="category-btn" data-category="math">Math</button>
+        <button class="category-btn" data-category="attention">Focus</button>
+      </div>
+      <button id="installBtn" class="sec-btn hidden">📲 Install offline app</button>
+
+      <section class="game-lab" aria-labelledby="gameLabTitle">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Choose your workout</span>
+            <h2 id="gameLabTitle">Game Lab</h2>
+          </div>
+          <span class="live-pill"><i></i> 6 games</span>
+        </div>
+        <div class="game-grid">
+          <button class="game-card game-card-blue" data-game="logic">
+            <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg></span><span class="game-card-copy"><strong>Sequence Sprint</strong><small>Patterns & deduction</small></span><span class="game-arrow"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
+          </button>
+          <button class="game-card game-card-purple" data-game="memory">
+            <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span class="game-card-copy"><strong>Memory Matrix</strong><small>Recall under pressure</small></span><span class="game-arrow"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
+          </button>
+          <button class="game-card game-card-gold" data-game="math">
+            <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg></span><span class="game-card-copy"><strong>Math Rush</strong><small>Fast mental arithmetic</small></span><span class="game-arrow"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
+          </button>
+          <button class="game-card game-card-green" data-game="reaction">
+            <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#timer"/></svg></span><span class="game-card-copy"><strong>Reaction Lab</strong><small>Speed & precision</small></span><span class="game-arrow">↗</span>
+          </button>
+          <button class="game-card game-card-orange" data-game="attention">
+            <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span><span class="game-card-copy"><strong>Focus Hunt</strong><small>Visual attention</small></span><span class="game-arrow"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
+          </button>
+          <button class="game-card game-card-pink" data-game="exam">
+            <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#flag"/></svg></span><span class="game-card-copy"><strong>42 Challenge</strong><small>Mixed exam simulation</small></span><span class="game-arrow"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
+          </button>
+        </div>
+        <div class="lab-note"><span class="lab-note-icon"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span><strong>New this week</strong> Spatial rotations, word logic, and priority puzzles are now mixed into Logic training.</span></div>
+      </section>
 
       <div class="legend">
         <div class="legend-item"><span class="tag tag-logic">Logic</span> Sequences · Deduction · Patterns</div>
@@ -45,13 +139,29 @@
         <div class="legend-item"><span class="tag tag-attention">Focus</span> Reaction · Visual search</div>
       </div>
     </div>
+
+    <div id="customModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="customModalTitle">
+      <div class="modal-card">
+        <div class="modal-heading"><div><span class="eyebrow">Build your workout</span><h2 id="customModalTitle">Custom session</h2></div><button id="closeCustomBtn" class="icon-btn" aria-label="Close custom session">✕</button></div>
+        <label class="field-label" for="customRounds">Rounds <output id="customRoundsValue">10</output></label>
+        <input id="customRounds" class="range-input" type="range" min="5" max="30" step="1" value="10" />
+        <span class="range-hint">5–30 rounds</span>
+        <label class="field-label" for="customCategory">Focus category</label>
+        <select id="customCategory" class="select-input">
+          <option value="all">Mixed workout</option><option value="logic">Logic & patterns</option><option value="memory">Memory</option><option value="math">Mental math</option><option value="attention">Focus & reaction</option>
+        </select>
+        <label class="field-label" for="customDifficulty">Difficulty</label>
+        <select id="customDifficulty" class="select-input"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option></select>
+        <button id="launchCustomBtn" class="cta-btn">Launch session →</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── STATS & ACHIEVEMENTS PANEL ────────────────────────────── -->
   <div id="statsPanel" class="screen">
     <div class="stats-card">
       <div class="stats-header">
-        <h2>📊 Stats & Achievements</h2>
+        <h2><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg> Stats & Achievements</h2>
         <button id="closeStatsBtn" class="icon-btn">✕</button>
       </div>
 
@@ -59,6 +169,7 @@
         <button class="stab active" data-tab="stats">Stats</button>
         <button class="stab" data-tab="achievements">Achievements</button>
         <button class="stab" data-tab="scores">High Scores</button>
+        <button class="stab" data-tab="mistakes">Mistakes</button>
       </div>
 
       <!-- Stats tab -->
@@ -70,14 +181,21 @@
           <div class="stat-box"><span class="stat-num" id="ltBestStreak">0</span><span class="stat-label">Best Streak</span></div>
         </div>
         <div class="daily-streak-box">
-          <p class="streak-title">📅 Daily Streak</p>
+          <p class="streak-title"><svg class="ui-icon"><use href="ui-icons.svg#calendar"/></svg> Daily Streak</p>
           <span class="streak-big" id="dailyStreak">0</span>
           <span class="streak-unit">days</span>
         </div>
+        <div class="stats-dashboard">
+          <div><h3>Category accuracy</h3><canvas id="categoryCanvas" width="520" height="180" aria-label="Category accuracy chart"></canvas></div>
+          <div><h3>Score history</h3><canvas id="historyCanvas" width="520" height="140" aria-label="Recent score history chart"></canvas></div>
+          <p id="weakestCategory" class="insight-callout"></p>
+        </div>
         <div class="stats-actions">
           <button id="exportDataBtn" class="sec-btn">Export Data</button>
+           <button id="importDataBtn" class="sec-btn">Import backup</button>
           <button id="clearDataBtn" class="sec-btn danger-btn">Clear All Data</button>
         </div>
+
       </div>
 
       <!-- Achievements tab -->
@@ -89,6 +207,11 @@
       <div id="tabScores" class="tab-panel">
         <div id="scoresList" class="scores-list"></div>
       </div>
+      <div id="tabMistakes" class="tab-panel">
+        <div id="categoryStats"></div>
+        <div id="mistakesList"></div>
+        <button id="practiceMistakesBtn" class="cta-btn">Practice my mistakes</button>
+      </div>
     </div>
   </div>
 
@@ -98,7 +221,7 @@
     <!-- Header bar -->
     <header class="hbar">
       <div class="hbar-left">
-        <button id="exitGameBtn" class="exit-btn" title="Quit session">✖</button>
+        <button id="exitGameBtn" class="exit-btn" title="Quit session" aria-label="Quit session">×</button>
         <span class="logo-sm">⬡ 42 Brain</span>
       </div>
       <div class="hbar-center">
@@ -106,13 +229,14 @@
         <div class="pill pill-type" id="typePill">Logic</div>
       </div>
       <div class="hbar-right">
-        <button id="hintBtn" class="hint-btn" title="Show hint">💡</button>
+        <button id="pauseBtn" class="hint-btn" title="Pause or resume">Ⅱ</button>
+        <button id="hintBtn" class="hint-btn" title="Show hint" aria-label="Show hint"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg></button>
         <div class="score-box">
           <span class="score-label">Score</span>
           <span class="score-val" id="scoreVal">0</span>
         </div>
         <div class="streak-box" id="streakBox">
-          <span class="streak-icon">🔥</span>
+          <span class="streak-icon"><svg class="ui-icon"><use href="ui-icons.svg#bolt"/></svg></span>
           <span id="streakVal">0</span>
         </div>
       </div>
@@ -123,7 +247,7 @@
       <div id="timerBar" class="timer-bar"></div>
     </div>
     <div class="timer-num-wrap">
-      <span id="timerNum" class="timer-num">15</span><span class="timer-s">s</span>
+      <span id="timerNum" class="timer-num" role="timer" aria-live="polite" aria-atomic="true">15</span><span class="timer-s">s</span>
     </div>
 
     <!-- Hint bar -->
@@ -174,7 +298,7 @@
   <div id="resultsScreen" class="screen">
     <div class="results-card">
       <div class="results-header">
-        <span id="resultEmoji" class="result-emoji">🏆</span>
+        <span id="resultEmoji" class="result-emoji"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
         <h2 id="resultTitle" class="result-title"></h2>
         <p id="resultQuote" class="result-quote"></p>
       </div>
@@ -207,6 +331,8 @@
       <canvas id="radarCanvas" width="280" height="280"></canvas>
 
       <div class="result-actions">
+        <button class="sec-btn" id="shareBtn"><svg class="ui-icon"><use href="ui-icons.svg#share"/></svg> Share result</button>
+        <button class="sec-btn" id="reviewBtn"><svg class="ui-icon"><use href="ui-icons.svg#book"/></svg> Review mistakes</button>
         <button class="cta-btn" id="playAgainBtn">Play Again</button>
         <button class="sec-btn" id="mainMenuBtn">Main Menu</button>
       </div>
@@ -222,10 +348,61 @@
     </div>
   </div>
 
+  <div id="onboardingModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <div class="modal-card"><h2 id="onboardingTitle">Welcome to 42 Brain</h2><p>Train logic, memory, speed and precision. Choose a category or start a workout. Your progress is saved on this device.</p><button id="onboardingClose" class="cta-btn">Let's train →</button></div>
+  </div>
+  <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-card"><div class="modal-heading"><h2 id="settingsTitle">Accessibility</h2><button id="settingsClose" class="icon-btn" aria-label="Close">✕</button></div>
+      <label class="setting-row"><input id="largeTextSetting" type="checkbox"> Larger text</label>
+      <label class="setting-row"><input id="contrastSetting" type="checkbox"> High contrast</label>
+      <label class="setting-row"><input id="colorblindSetting" type="checkbox"> Colorblind-friendly palette</label>
+      <label class="setting-row"><input id="motionSetting" type="checkbox"> Reduce motion</label>
+      <label class="setting-row"><input id="soundSetting" type="checkbox"> Sound effects</label>
+    </div>
+  </div>
+    <!-- Expanded training workspace. This is deliberately vanilla and works offline. -->
+    <div id="workspace" class="workspace screen" aria-label="42 Brain workspace">
+      <header class="workspace-header">
+        <button class="workspace-brand" data-page="home"><img src="icon.svg" alt=""> <span>42 Brain</span></button>
+        <button id="workspaceBack" class="sec-btn workspace-back">← Back to classic trainer</button>
+      </header>
+      <div class="workspace-shell">
+        <nav class="workspace-nav" aria-label="Main sections">
+          <button data-page="home" class="active"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg><span>Home</span></button>
+          <button data-page="train"><svg class="ui-icon"><use href="ui-icons.svg#bolt"/></svg><span>Train</span></button>
+          <button data-page="arcade"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg><span>Brain Arcade</span></button>
+          <button data-page="memory"><svg class="ui-icon"><use href="ui-icons.svg#book"/></svg><span>Memory Studio</span></button>
+          <button data-page="focus"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg><span>Focus Arena</span></button>
+          <button data-page="strategy"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg><span>Strategy Room</span></button>
+          <button data-page="lab"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg><span>42 Lab</span></button>
+          <button data-page="progress"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg><span>Progress</span></button>
+          <button data-page="settings"><svg class="ui-icon"><use href="ui-icons.svg#settings"/></svg><span>Settings</span></button>
+        </nav>
+        <main class="workspace-main">
+          <div id="workspaceBreadcrumb" class="workspace-breadcrumb" aria-label="Current location"><span>Workspace</span><span aria-hidden="true">/</span><strong>Home</strong></div>
+          <section data-workspace-page="home" class="workspace-page active">
+            <div class="workspace-hero"><span class="eyebrow">Cognitive training system</span><h1>Build a sharper mind.</h1><p>Short, tactile challenges for logic, memory, focus and planning. Every run is saved locally.</p><button class="cta-btn" data-page="arcade">Open Brain Arcade →</button></div>
+            <div class="workspace-cards"><article><b>19</b><span>playable challenges</span></article><article><b id="workspaceScore">0</b><span>points this week</span></article><article><b>∞</b><span>offline sessions</span></article></div>
+            <div class="section-heading"><div><span class="eyebrow">Choose a lane</span><h2>Train by intention</h2></div></div>
+            <div class="lane-grid"><button data-page="memory"><b>Memory Studio</b><small>Encode, hold, reproduce</small></button><button data-page="focus"><b>Focus Arena</b><small>Filter signal from noise</small></button><button data-page="strategy"><b>Strategy Room</b><small>Plan, route, allocate</small></button><button data-page="lab"><b>42 Lab</b><small>Experimental mechanics</small></button></div>
+          </section>
+          <section data-workspace-page="train" class="workspace-page"><span class="eyebrow">Classic workouts</span><h1>Train</h1><p>Use the original 42 Brain trainer with adaptive rounds and daily challenges.</p><button id="workspaceClassic" class="cta-btn">Launch classic trainer →</button></section>
+          <section data-workspace-page="arcade" class="workspace-page"><span class="eyebrow">Playable challenges</span><h1>Brain Arcade</h1><p>Short, replayable challenges for memory, focus, planning and logic. Choose a card to see its objective and controls.</p><div class="arcade-toolbar"><button class="sec-btn" id="arcadeHelp"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg> How to play</button><span class="toolbar-note">19 offline games · no timer pressure</span></div><div id="arcadeHelpPanel" class="help-panel hidden"><strong>How to play</strong><p>Choose a card, read the objective and use the buttons or arrow keys shown. Reset restarts the current puzzle; New game creates a fresh layout. Your score and best scores stay on this device.</p></div><div id="gameCatalog" class="game-catalog"></div></section>
+          <section data-workspace-page="memory" class="workspace-page"><span class="eyebrow">Encode · retain · recall</span><h1>Memory Studio</h1><p>Hold a pattern, route or sequence, then reproduce it accurately.</p><div class="game-catalog" data-filter="memory"></div></section>
+          <section data-workspace-page="focus" class="workspace-page"><span class="eyebrow">Selective attention</span><h1>Focus Arena</h1><p>Filter noise, spot targets and follow changing rules without rushing.</p><div class="game-catalog" data-filter="focus"></div></section>
+          <section data-workspace-page="strategy" class="workspace-page"><span class="eyebrow">Plan before you move</span><h1>Strategy Room</h1><p>Sequence decisions, balance resources and route each step toward the goal.</p><div class="game-catalog" data-filter="strategy"></div></section>
+          <section data-workspace-page="lab" class="workspace-page"><span class="eyebrow">Experimental mechanics</span><h1>42 Lab</h1><p>Decode clues and make clean technical decisions.</p><div class="game-catalog" data-filter="lab"></div></section>
+          <section data-workspace-page="progress" class="workspace-page"><span class="eyebrow">Your local record</span><h1>Progress</h1><div id="workspaceProgress" class="progress-summary"></div></section>
+          <section data-workspace-page="settings" class="workspace-page"><span class="eyebrow">Tune your environment</span><h1>Settings</h1><div class="settings-card"><label>Theme <select id="workspaceTheme"><option value="light">Light</option><option value="dark">Dark</option></select></label><label><input id="workspaceSound" type="checkbox" checked> Sound effects</label><label><input id="workspaceReduced" type="checkbox"> Reduce motion</label><button id="workspaceReset" class="sec-btn danger-btn">Reset local game scores</button></div><aside class="about-card"><span class="eyebrow">About 42 Brain</span><h2>Designed by MM</h2><p>An offline-first cognitive trainer for deliberate practice.</p><div class="about-links"><a href="https://github.com/Mossesmuwa" target="_blank" rel="noreferrer" aria-label="Open Mossesmuwa on GitHub"><svg class="ui-icon"><use href="ui-icons.svg#share"/></svg> GitHub</a><a href="https://mossesmuwa.github.io/" target="_blank" rel="noreferrer" aria-label="Open Mossesmuwa website"><svg class="ui-icon"><use href="ui-icons.svg#book"/></svg> Website</a><a href="mailto:mossesmuwa@proton.me" aria-label="Email Mossesmuwa"><svg class="ui-icon"><use href="ui-icons.svg#users"/></svg> Email</a></div></aside></section>
+        </main>
+      </div>
+    </div>
+  </div>
   <script src="storage.js"></script>
   <script src="sounds.js"></script>
   <script src="achievements.js"></script>
   <script src="puzzles.js"></script>
   <script src="game.js"></script>
+  <script src="arcade.js"></script>
 </body>
 </html>
