@@ -68,10 +68,22 @@ const el = {
   totalRounds:      $('totalRounds'),
   typePill:         $('typePill'),
   scoreVal:         $('scoreVal'),
+  scoreLabel:       document.querySelector('.score-label'),
   streakBox:        $('streakBox'),
   streakVal:        $('streakVal'),
   timerBar:         $('timerBar'),
   timerNum:         $('timerNum'),
+  duoTurnBar:       $('duoTurnBar'),
+  duoTurnName:      $('duoTurnName'),
+  duoScoreOne:      $('duoScoreOne'),
+  duoScoreTwo:      $('duoScoreTwo'),
+  duoNameOne:       $('duoNameOne'),
+  duoNameTwo:       $('duoNameTwo'),
+  duoResults:       $('duoResults'),
+  duoResultNameOne: $('duoResultNameOne'),
+  duoResultNameTwo: $('duoResultNameTwo'),
+  duoResultScoreOne: $('duoResultScoreOne'),
+  duoResultScoreTwo: $('duoResultScoreTwo'),
   flashOverlay:     $('flashOverlay'),
   flashContent:     $('flashContent'),
   flashBar:         $('flashBar'),
@@ -119,6 +131,10 @@ const el = {
 (function init() {
   const settings = Store.getSettings();
   SoundFX.init(settings.volume, settings.sound);
+  const workspaceSound = $('workspaceSound');
+  const workspaceReduced = $('workspaceReduced');
+  if (workspaceSound) workspaceSound.checked = settings.sound;
+  if (workspaceReduced) workspaceReduced.checked = settings.reducedMotion;
   applyTheme(settings.theme);
   document.body.classList.toggle('large-text', settings.largeText);
   document.body.classList.toggle('high-contrast', settings.highContrast);
@@ -176,6 +192,17 @@ function startGame() {
   G.usedPuzzleIds = new Set();
   G.practiceQueue = G.mode === 'mistakes' ? Store.getStats().mistakes.filter(m => m.puzzle).slice(0, 10) : [];
   G.hintUsed = false;
+  const isDuo = G.mode === 'duo';
+  el.duoTurnBar.classList.toggle('hidden', !isDuo);
+  if (isDuo) {
+    el.scoreLabel.textContent = 'Total';
+    el.duoNameOne.textContent = G.playerNames[0];
+    el.duoNameTwo.textContent = G.playerNames[1];
+    el.duoScoreOne.textContent = G.playerScores[0];
+    el.duoScoreTwo.textContent = G.playerScores[1];
+  } else {
+    el.scoreLabel.textContent = 'Score';
+  }
 
   G.totalRounds = G.mode === 'daily' ? 10 : G.mode === 'exam' ? 42 : G.mode === 'custom' ? G.customRounds : G.mode === 'mistakes' ? Math.max(1, G.practiceQueue.length) : G.mode === 'endless' || G.mode === 'minute' ? 999 : { easy: 8, normal: 10, hard: 12 }[G.difficulty];
   G.maxTime     = G.mode === 'exam' ? 10 : { easy: 20, normal: 15, hard: 10 }[G.difficulty];
@@ -904,7 +931,10 @@ function handleAnswer(value, clickedBtn) {
   markDot(G.round, correct ? 'correct' : 'wrong');
 
   G.round++;
-  if (G.mode === 'duo') G.player = G.player === 1 ? 2 : 1;
+  if (G.mode === 'duo') {
+    G.player = G.player === 1 ? 2 : 1;
+    SoundFX.turn();
+  }
   setTimeout(nextRound, 1400);
 }
 
@@ -999,7 +1029,10 @@ function onTimeout() {
   showFeedback('timeout', false, 0);
   markDot(G.round, 'timeout');
   G.round++;
-  if (G.mode === 'duo') G.player = G.player === 1 ? 2 : 1;
+  if (G.mode === 'duo') {
+    G.player = G.player === 1 ? 2 : 1;
+    SoundFX.turn();
+  }
   setTimeout(nextRound, 1400);
 }
 
@@ -1007,6 +1040,11 @@ function onTimeout() {
 function updateHUD() {
   el.scoreVal.textContent = G.score;
   el.streakVal.textContent = G.streak;
+  if (G.mode === 'duo') {
+    el.duoTurnName.textContent = G.playerNames[G.player - 1];
+    el.duoScoreOne.textContent = G.playerScores[0];
+    el.duoScoreTwo.textContent = G.playerScores[1];
+  }
   if (G.streak >= 3) {
     el.streakBox.style.background = 'var(--orange-light)';
     el.streakBox.classList.add('bounce');
@@ -1049,6 +1087,15 @@ function showResults() {
   el.finalCorrect.textContent = `${correct}/${denominator}`;
   el.finalAccuracy.textContent = accuracy + '%';
   el.finalStreak.textContent = G.bestStreak;
+  const isDuo = G.mode === 'duo';
+  el.duoResults.classList.toggle('hidden', !isDuo);
+  if (isDuo) {
+    el.duoResultNameOne.textContent = G.playerNames[0];
+    el.duoResultNameTwo.textContent = G.playerNames[1];
+    el.duoResultScoreOne.textContent = G.playerScores[0];
+    el.duoResultScoreTwo.textContent = G.playerScores[1];
+    el.resultTitle.textContent = G.playerScores[0] === G.playerScores[1] ? 'A perfect tie!' : `${G.playerScores[0] > G.playerScores[1] ? G.playerNames[0] : G.playerNames[1]} wins!`;
+  }
 
   // Round timeline
   el.roundTimeline.innerHTML = '';
@@ -1289,6 +1336,7 @@ el.clearDataBtn.addEventListener('click', () => {
 /* ── RESULTS BUTTONS ─────────────────────────────────────────────── */
 el.playAgainBtn.addEventListener('click', () => {
   showScreen('game');
+  if (G.mode === 'duo') { G.player = 1; G.playerScores = [0, 0]; }
   startGame();
 });
 el.mainMenuBtn.addEventListener('click', () => showScreen('splash'));
@@ -1306,6 +1354,8 @@ const enhancement = {
   customCategory: $('customCategory'), customDifficulty: $('customDifficulty'),
   importDataBtn: $('importDataBtn'), onboardingModal: $('onboardingModal'), onboardingClose: $('onboardingClose'),
   settingsModal: $('settingsModal'), settingsClose: $('settingsClose'),
+  duoModal: $('duoModal'), closeDuoBtn: $('closeDuoBtn'), launchDuoBtn: $('launchDuoBtn'),
+  playerOneName: $('playerOneName'), playerTwoName: $('playerTwoName'),
 };
 const statsNavBtn = $('statsNavBtn');
 if (statsNavBtn) statsNavBtn.addEventListener('click', () => { populateStatsPanel(); showScreen('stats'); });
@@ -1324,12 +1374,19 @@ enhancement.examBtn.addEventListener('click', () => {
   });
 });
 enhancement.duoBtn.addEventListener('click', () => {
-  const first = (window.prompt('Player 1 name', 'Player 1') || 'Player 1').slice(0,24);
-  const second = (window.prompt('Player 2 name', 'Player 2') || 'Player 2').slice(0,24);
+  enhancement.duoModal.classList.remove('hidden');
+  enhancement.playerOneName.focus();
+});
+enhancement.closeDuoBtn.addEventListener('click', () => enhancement.duoModal.classList.add('hidden'));
+enhancement.duoModal.addEventListener('click', event => {
+  if (event.target === enhancement.duoModal) enhancement.duoModal.classList.add('hidden');
+});
+enhancement.launchDuoBtn.addEventListener('click', () => {
+  const first = (enhancement.playerOneName.value.trim() || 'Player 1').slice(0, 24);
+  const second = (enhancement.playerTwoName.value.trim() || 'Player 2').slice(0, 24);
   G.playerNames = [first, second];
-  appModal(`${first} vs ${second}: take turns and pass the device after each answer.`, false, () => {
-    G.mode = 'duo'; G.category = 'all'; G.player = 1; G.playerScores = [0, 0]; startGame();
-  });
+  enhancement.duoModal.classList.add('hidden');
+  G.mode = 'duo'; G.category = 'all'; G.player = 1; G.playerScores = [0, 0]; startGame();
 });
 enhancement.minuteBtn.addEventListener('click', () => { G.mode = 'minute'; G.category = 'all'; startGame(); });
 enhancement.endlessBtn.addEventListener('click', () => { G.mode = 'endless'; G.category = 'all'; startGame(); });
@@ -1415,6 +1472,12 @@ enhancement.settingsModal.addEventListener('change', e => {
   const s = Store.getSettings(); s[key] = e.target.checked; Store.saveSettings(s);
   document.body.classList.toggle('large-text', s.largeText); document.body.classList.toggle('high-contrast', s.highContrast);
   document.body.classList.toggle('colorblind', s.colorblind); document.body.classList.toggle('reduce-motion', s.reducedMotion); SoundFX.enable(s.sound);
+});
+if ($('workspaceSound')) $('workspaceSound').addEventListener('change', e => {
+  const s = Store.getSettings(); s.sound = e.target.checked; Store.saveSettings(s); SoundFX.enable(s.sound);
+});
+if ($('workspaceReduced')) $('workspaceReduced').addEventListener('change', e => {
+  const s = Store.getSettings(); s.reducedMotion = e.target.checked; Store.saveSettings(s); document.body.classList.toggle('reduce-motion', s.reducedMotion);
 });
 if (!Store.get('onboarded', false)) enhancement.onboardingModal.classList.remove('hidden');
 enhancement.onboardingClose.addEventListener('click', () => { Store.set('onboarded', true); enhancement.onboardingModal.classList.add('hidden'); });
