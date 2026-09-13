@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="42 Brain — Logic and memory trainer inspired by 42-school entrance tests. Train your cognitive skills offline." />
   <title>42 Brain — Logic & Memory Trainer</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2563eb" />
@@ -74,6 +76,12 @@
           <aside class="home-note"><span class="note-icon"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg></span><div><strong>Small sessions compound.</strong><p>Consistency beats intensity. Come back tomorrow and keep your streak moving.</p></div></aside>
         </section>
       </main>
+
+      <section class="home-creator" aria-labelledby="creatorTitle">
+        <div class="creator-avatar-wrap"><img src="creator-avatar.png" alt="MM creator avatar" class="creator-avatar" /></div>
+        <div class="creator-copy"><span class="eyebrow">Built with curiosity</span><h2 id="creatorTitle">Designed by MM</h2><p>42 Brain is an offline-first cognitive training space created to make deliberate practice feel clear, useful and enjoyable.</p><div class="creator-links"><a href="https://github.com/Mossesmuwa" target="_blank" rel="noreferrer"><svg class="ui-icon"><use href="ui-icons.svg#share"/></svg> GitHub</a><a href="https://mossesmuwa.github.io/" target="_blank" rel="noreferrer"><svg class="ui-icon"><use href="ui-icons.svg#book"/></svg> Portfolio</a><a href="mailto:mossesmuwa@proton.me"><svg class="ui-icon"><use href="ui-icons.svg#users"/></svg> Contact MM</a></div></div>
+        <div class="creator-cta"><span>Have an idea or project?</span><a class="sec-btn" href="mailto:mossesmuwa@proton.me">Get in touch <svg class="ui-icon"><use href="ui-icons.svg#arrow"/></svg></a></div>
+      </section>
 
       <nav class="premium-nav" aria-label="Training navigation">
         <section class="nav-group"><h3><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg> Quick start</h3><div class="feature-actions">
@@ -155,6 +163,14 @@
         <button id="launchCustomBtn" class="cta-btn">Launch session →</button>
       </div>
     </div>
+    <div id="duoModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="duoModalTitle">
+      <div class="modal-card duo-card">
+        <div class="modal-heading"><div><span class="eyebrow">Pass-and-play workout</span><h2 id="duoModalTitle">Two-player mode</h2></div><button id="closeDuoBtn" class="icon-btn" aria-label="Close two-player setup">✕</button></div>
+        <p class="modal-description">Take turns solving the same mix of challenges. Pass the device after each answer and compare your scores at the end.</p>
+        <div class="duo-fields"><label class="field-label" for="playerOneName">Player 1<input id="playerOneName" class="text-input" maxlength="24" value="Player 1" autocomplete="off"></label><span class="duo-vs">VS</span><label class="field-label" for="playerTwoName">Player 2<input id="playerTwoName" class="text-input" maxlength="24" value="Player 2" autocomplete="off"></label></div>
+        <button id="launchDuoBtn" class="cta-btn"><svg class="ui-icon"><use href="ui-icons.svg#users"/></svg> Start two-player session</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── STATS & ACHIEVEMENTS PANEL ────────────────────────────── -->
@@ -222,7 +238,7 @@
     <header class="hbar">
       <div class="hbar-left">
         <button id="exitGameBtn" class="exit-btn" title="Quit session" aria-label="Quit session">×</button>
-        <span class="logo-sm">⬡ 42 Brain</span>
+        <span class="logo-sm"><img src="icon.svg" alt="" />42 Brain</span>
       </div>
       <div class="hbar-center">
         <div class="pill" id="roundPill">Round <span id="roundNum">1</span> / <span id="totalRounds">10</span></div>
@@ -241,6 +257,11 @@
         </div>
       </div>
     </header>
+    <div id="duoTurnBar" class="duo-turn-bar hidden" aria-live="polite">
+      <span class="duo-turn-label"><svg class="ui-icon"><use href="ui-icons.svg#users"/></svg> <strong id="duoTurnName">Player 1</strong>'s turn</span>
+      <span class="duo-score"><b id="duoScoreOne">0</b> <small id="duoNameOne">Player 1</small></span>
+      <span class="duo-score"><b id="duoScoreTwo">0</b> <small id="duoNameTwo">Player 2</small></span>
+    </div>
 
     <!-- Timer bar -->
     <div class="timer-bar-wrap">
@@ -306,6 +327,10 @@
         <div class="stat-box">
           <span class="stat-num" id="finalScore">0</span>
           <span class="stat-label">Final Score</span>
+        </div>
+        <div id="duoResults" class="duo-results hidden">
+          <div><span id="duoResultNameOne">Player 1</span><strong id="duoResultScoreOne">0</strong></div>
+          <div><span id="duoResultNameTwo">Player 2</span><strong id="duoResultScoreTwo">0</strong></div>
         </div>
         <div class="stat-box">
           <span class="stat-num" id="finalCorrect">0</span>

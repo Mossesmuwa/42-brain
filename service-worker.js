@@ -1,5 +1,5 @@
-const CACHE = '42brain-v5';
-const ASSETS = ['./', './index.html', './style.css', './game.js', './puzzles.js', './storage.js', './achievements.js', './sounds.js', './arcade.js', './manifest.webmanifest', './icon.svg', './ui-icons.svg'];
+const CACHE = '42brain-v9';
+const ASSETS = ['./', './index.html', './style.css', './game.js', './puzzles.js', './storage.js', './achievements.js', './sounds.js', './arcade.js', './manifest.webmanifest', './icon.svg', './ui-icons.svg', './creator-avatar.png'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
