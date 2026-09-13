@@ -17,7 +17,7 @@
   const bindCells = (root, callback) => root.querySelectorAll('[data-cell]').forEach(cell => {
     cell.addEventListener('click', () => callback(Number(cell.dataset.cell), cell));
   });
-  const resetMessage = ctx => { ctx.message.textContent = ''; ctx.message.className = 'game-message'; };
+  const resetMessage = ctx => { ctx.message.textContent = ''; ctx.message.className = 'game-message'; delete ctx.message.dataset.done; };
 
   function pathFrom(start, size, length) {
     const result = [start];
@@ -278,9 +278,116 @@
     }));
   }
 
+
+  function choiceGame(ctx, instruction, options, answer, successText, failText = 'Not quite. Reset and try again.') {
+    ctx.board.innerHTML = `<p class="game-instruction">${instruction}</p><div class="choice-column">${options.map((o, i) => `<button type="button" data-choice="${i}">${o}</button>`).join('')}</div>`;
+    ctx.board.querySelectorAll('[data-choice]').forEach(button => button.addEventListener('click', () => {
+      const ok = Number(button.dataset.choice) === answer;
+      ctx.finish(ok, ok ? successText : failText);
+    }));
+  }
+
+  function numberRecall(ctx) {
+    const length = 5 + Math.floor(Math.random() * 3);
+    const sequence = range(length).map(() => Math.floor(Math.random() * 10));
+    ctx.board.innerHTML = `<div class="recall-sequence" aria-live="polite">${sequence.join(' ')}</div><button id="hideRecall" class="cta-btn" type="button">Hide number</button><input id="recallInput" class="code-input" inputmode="numeric" maxlength="${length}" placeholder="${'•'.repeat(length)}" disabled><button id="recallSubmit" class="sec-btn" type="button" disabled>Check</button><p class="game-instruction">Memorise the digits, hide them, then enter them in order.</p>`;
+    const input=ctx.board.querySelector('#recallInput'), submit=ctx.board.querySelector('#recallSubmit');
+    ctx.board.querySelector('#hideRecall').addEventListener('click', () => {
+      ctx.board.querySelector('.recall-sequence').textContent='? ? ? ? ?';
+      input.disabled=false; submit.disabled=false; input.focus();
+    });
+    submit.addEventListener('click', () => ctx.finish(input.value === sequence.join(''), input.value === sequence.join('') ? 'Perfect recall.' : `The sequence was ${sequence.join('')}.`));
+    input.addEventListener('keydown', e => { if(e.key==='Enter') submit.click(); });
+  }
+
+  function cardMemory(ctx) {
+    const symbols=['▲','●','■','◆'];
+    const cards=shuffled([...symbols,...symbols]); let first=null, locked=false, matches=0;
+    ctx.board.innerHTML=`<p class="game-instruction">Find all matching pairs.</p><div class="memory-cards">${cards.map((_,i)=>`<button type="button" data-card="${i}" aria-label="Hidden card ${i+1}">?</button>`).join('')}</div>`;
+    const buttons=[...ctx.board.querySelectorAll('[data-card]')];
+    buttons.forEach((b,i)=>b.addEventListener('click',()=>{
+      if(locked||ctx.isDone()||b.classList.contains('matched')||b===first)return;
+      b.textContent=cards[i]; b.classList.add('revealed');
+      if(first===null){first=b;return;}
+      const j=Number(first.dataset.card);
+      if(cards[j]===cards[i]){first.classList.add('matched');b.classList.add('matched');matches++;first=null;if(matches===symbols.length)ctx.finish(true,'All pairs found.');}
+      else {locked=true;ctx.later(()=>{first.textContent='?';b.textContent='?';first.classList.remove('revealed');b.classList.remove('revealed');first=null;locked=false;},650);}
+    }));
+  }
+
+  function delayedRecall(ctx) {
+    const target=pick(['triangle','circle','square','diamond']);
+    ctx.board.innerHTML=`<p class="game-instruction">Remember the target, then complete a quick classification.</p><div class="delay-target">${target}</div><button id="delayStart" class="cta-btn" type="button">Hide & start</button><div id="delayTask" class="choice-column hidden"></div>`;
+    ctx.board.querySelector('#delayStart').addEventListener('click',()=>{
+      ctx.board.querySelector('.delay-target').textContent='Hidden'; ctx.board.querySelector('#delayStart').disabled=true;
+      const vals=['triangle','circle','square','diamond'];
+      ctx.later(()=>{ctx.board.querySelector('#delayTask').classList.remove('hidden');ctx.board.querySelector('#delayTask').innerHTML=vals.map((v,i)=>`<button type="button" data-v="${v}">${v}</button>`).join('');ctx.board.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>ctx.finish(b.dataset.v===target,b.dataset.v===target?'Delayed recall correct.':'Target missed.')))},900);
+    });
+  }
+
+  function dualMemory(ctx) {
+    const symbols=['▲','●','■','◆']; const symbol=pick(symbols), pos=Math.floor(Math.random()*9);
+    ctx.board.innerHTML=`<p class="game-instruction">Remember the symbol and its position.</p>${gridMarkup(3,'dual-grid',{[pos]:symbol})}<button id="hideDual" class="cta-btn" type="button">Hide</button><div id="dualChoices" class="choice-column hidden"></div>`;
+    ctx.board.querySelector('#hideDual').addEventListener('click',()=>{ctx.board.querySelectorAll('[data-cell]').forEach(c=>c.textContent='');ctx.board.querySelector('#dualChoices').classList.remove('hidden');ctx.board.querySelector('#dualChoices').innerHTML=`${symbols.map(v=>`<button type="button" data-symbol="${v}">${v}</button>`).join('')}<p class="game-instruction">Now choose the remembered symbol, then position.</p>${range(9).map(i=>`<button type="button" data-pos="${i}">Position ${i+1}</button>`).join('')}`;let pickedSymbol=null;ctx.board.querySelectorAll('[data-symbol]').forEach(b=>b.onclick=()=>{pickedSymbol=b.dataset.symbol;ctx.board.querySelectorAll('[data-symbol]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');});ctx.board.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>ctx.finish(pickedSymbol===symbol&&Number(b.dataset.pos)===pos,pickedSymbol===symbol&&Number(b.dataset.pos)===pos?'Symbol and position recalled.':'One part of the memory was wrong.'));});
+  }
+
+  function goNoGo(ctx) {
+    let round=0, hits=0; const total=8;
+    ctx.board.innerHTML=`<div class="gonogo-signal" id="goSignal">WAIT</div><button id="goBtn" class="cta-btn" type="button">Respond</button><p class="game-instruction">Press Respond only when the signal says GO. ${total} trials.</p>`;
+    const signal=ctx.board.querySelector('#goSignal'), btn=ctx.board.querySelector('#goBtn');
+    const next=()=>{if(round>=total){ctx.finish(hits>=6,`You responded correctly on ${hits}/${total} trials.`);return;}round++;const go=Math.random()>.35;signal.textContent=go?'GO':'NO-GO';signal.dataset.go=go?'true':'false';ctx.later(()=>{if(!ctx.isDone()&&signal.dataset.go==='false'){signal.textContent='WAIT';next();}},850);};
+    btn.addEventListener('click',()=>{if(ctx.isDone())return;if(signal.dataset.go==='true'){hits++;signal.textContent='HIT';}else{ctx.finish(false,'Response inhibition missed. Reset and try again.');return;}ctx.later(next,280);});next();
+  }
+
+  function changeDetection(ctx) {
+    const size=4, changed=Math.floor(Math.random()*16); const a=range(16).map(i=>pick(['●','■','▲','◆'])); const b=a.slice(); let next=b[changed]; while(next===a[changed]) next=pick(['●','■','▲','◆']); b[changed]=next;
+    ctx.board.innerHTML=`<p class="game-instruction">Study the first grid. Then find the changed cell.</p><div class="change-grid">${a.map(v=>`<span>${v}</span>`).join('')}</div><button id="showSecond" class="cta-btn" type="button">Show changed version</button><div id="changeChoices" class="change-grid hidden">${b.map((v,i)=>`<button type="button" data-i="${i}">${v}</button>`).join('')}</div>`;
+    ctx.board.querySelector('#showSecond').onclick=()=>{ctx.board.querySelector('.change-grid').classList.add('hidden');ctx.board.querySelector('#changeChoices').classList.remove('hidden');ctx.board.querySelectorAll('[data-i]').forEach(x=>x.onclick=()=>ctx.finish(Number(x.dataset.i)===changed,Number(x.dataset.i)===changed?'Change detected.':'Wrong cell.'));};
+  }
+
+  function peripheral(ctx) {
+    const side=pick(['LEFT','RIGHT']); ctx.board.innerHTML=`<div class="peripheral-center">+</div><p class="game-instruction">Keep your eyes on the center. A signal will appear briefly at the edge.</p><button id="peripheralStart" class="cta-btn">Start</button><div id="peripheralChoices" class="choice-column hidden"></div>`;
+    ctx.board.querySelector('#peripheralStart').onclick=()=>{ctx.board.querySelector('#peripheralStart').disabled=true;ctx.later(()=>{ctx.board.querySelector('.peripheral-center').textContent=side;ctx.later(()=>{ctx.board.querySelector('.peripheral-center').textContent='+';const c=ctx.board.querySelector('#peripheralChoices');c.classList.remove('hidden');c.innerHTML=['LEFT','RIGHT'].map(v=>`<button type="button" data-v="${v}">${v}</button>`).join('');c.querySelectorAll('button').forEach(b=>b.onclick=()=>ctx.finish(b.dataset.v===side,b.dataset.v===side?'Peripheral signal caught.':'Wrong side.'));},260);},650);};
+  }
+
+  function movingTarget(ctx) {
+    let target=pick(range(12)); let step=0; ctx.board.innerHTML=`<p class="game-instruction">Watch the target move. Select its final position after the field freezes.</p><div class="moving-field">${range(12).map(i=>`<button type="button" data-i="${i}">·</button>`).join('')}</div><button id="freezeTarget" class="cta-btn">Freeze field</button>`;
+    const buttons=[...ctx.board.querySelectorAll('[data-i]')]; let timer;
+    const move=()=>{buttons.forEach(b=>b.classList.remove('moving-target'));target=(target+pick([-1,1,3,-3])+12)%12;buttons[target].classList.add('moving-target');step++;if(step<7)timer=ctx.later(move,260);};
+    move();ctx.board.querySelector('#freezeTarget').onclick=()=>{clearTimeout(timer);buttons.forEach(b=>b.classList.remove('moving-target'));buttons.forEach(b=>b.onclick=()=>ctx.finish(Number(b.dataset.i)===target,Number(b.dataset.i)===target?'Target tracked.':'Lost the target.'));};
+  }
+
+  function reactionLab(ctx) {
+    let ready=false, start=0;ctx.board.innerHTML=`<div class="reaction-light" id="reactionLight">WAIT</div><button id="reactionButton" class="cta-btn">Wait for GO</button><p class="game-instruction">Press as soon as the signal changes to GO.</p>`;
+    const light=ctx.board.querySelector('#reactionLight'),btn=ctx.board.querySelector('#reactionButton');const delay=900+Math.random()*1800;
+    ctx.later(()=>{ready=true;start=performance.now();light.textContent='GO';btn.textContent='RESPOND';},delay);
+    btn.onclick=()=>{if(!ready){ctx.finish(false,'Too early. Reset and wait for GO.');return;}const ms=Math.round(performance.now()-start);ctx.finish(true,`Reaction recorded: ${ms} ms.`);};
+  }
+
+  function quickMath(ctx) { const a=3+Math.floor(Math.random()*12),b=2+Math.floor(Math.random()*9),op=pick(['+','−','×']);const ans=op==='+'?a+b:op==='−'?a-b:a*b;const opts=shuffled([ans,ans+pick([-3,-2,2,3]),ans+pick([-5,4]),ans+pick([-7,6])]);choiceGame(ctx,`Solve: <strong>${a} ${op} ${b} = ?</strong>`,opts,opts.indexOf(ans),'Correct calculation.'); }
+  function rapidCompare(ctx) { const a=10+Math.floor(Math.random()*90),b=10+Math.floor(Math.random()*90);const opts=['LEFT','RIGHT'];choiceGame(ctx,`${a} or ${b}: which value is larger?`,opts,a>b?0:1,'Fast comparison.'); }
+  function visualSearch(ctx) { const target=pick(['◆','●','▲']);const values=range(20).map(()=>pick(['◇','○','△','■']));const pos=Math.floor(Math.random()*values.length);values[pos]=target;ctx.board.innerHTML=`<p class="game-instruction">Find the only <strong>${target}</strong>.</p><div class="target-field">${values.map((v,i)=>`<button type="button" data-i="${i}">${v}</button>`).join('')}</div>`;ctx.board.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>ctx.finish(Number(b.dataset.i)===pos,Number(b.dataset.i)===pos?'Match found.':'Wrong symbol.')); }
+  function binaryLogic(ctx) { const n=5+Math.floor(Math.random()*26),bin=n.toString(2),opts=shuffled([n,n+1,n-1,n+4]);choiceGame(ctx,`What decimal number is <strong>${bin}<sub>2</sub></strong>?`,opts,opts.indexOf(n),'Binary converted correctly.'); }
+  function sortLab(ctx) { choiceGame(ctx,'You have nearly sorted data and need a stable result. Which choice is the best fit?',['Bubble sort','Insertion sort','Random shuffle','Linear search'],1,'Insertion sort is a strong fit for nearly sorted data.'); }
+  function outputPredictor(ctx) { const a=2+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*4),ans=(a+b)*2;const opts=shuffled([ans,ans-2,ans+2,a+b]);choiceGame(ctx,`Algorithm: <code>x = ${a}; x = x + ${b}; x = x * 2</code><br>What is the final x?`,opts,opts.indexOf(ans),'Output predicted.'); }
+  function graphTraversal(ctx) { choiceGame(ctx,'Starting at A, which node is reached after the shortest route A → B → D?',['C','D','E','F'],1,'Shortest traversal chosen.'); }
+  function stackQueue(ctx) { choiceGame(ctx,'A stack contains [A, B, C] with C on top. What does POP return?',['A','B','C','Nothing'],2,'Correct: C is on top.'); }
+  function recursionTrace(ctx) { const n=3+Math.floor(Math.random()*3),ans=n<=1?1:n*(n-1);const opts=shuffled([ans,ans+1,ans-1,n]);choiceGame(ctx,`A function returns n × (n − 1). If n = ${n}, what is returned?`,opts,opts.indexOf(ans),'Trace complete.'); }
+  function matrixLogic(ctx) { choiceGame(ctx,'Each row increases by 2: 2, 4, 6 · 4, 6, 8 · 6, 8, ?',['8','9','10','12'],2,'Matrix rule found.'); }
+  function truthTable(ctx) { choiceGame(ctx,'If A is true and B is false, which statement is true?',['A AND B','A OR B','NOT A','B'],1,'Truth condition satisfied.'); }
+  function deductionGrid(ctx) { choiceGame(ctx,'Ava is earlier than Bo. Cy is later than Bo. Who is first?',['Ava','Bo','Cy','Cannot know'],0,'All clues agree: Ava is first.'); }
+  function conditionalLogic(ctx) { choiceGame(ctx,'Rule: IF temperature > 30 THEN fan = ON. Temperature is 34. What is the state?',['OFF','ON','UNKNOWN','ERROR'],1,'Condition applied correctly.'); }
+  function missingOperator(ctx) { choiceGame(ctx,'Complete: 8 ? 4 = 32',['+','−','×','÷'],2,'Operator found.'); }
+  function debugAlgorithm(ctx) { choiceGame(ctx,'Which line breaks a loop that should count 1 → 5?',['i = 1','while i <= 5','print(i)','i = i - 1'],3,'Bug located.'); }
+
+  function routePlanner(ctx) { const blocked=new Set([5,6,10]);ctx.board.innerHTML=`<p class="game-instruction">Reach EXIT using adjacent cells. Avoid blocked cells.</p>${gridMarkup(4,'route-planner',{15:'EXIT'})}`;const cells=ctx.board.querySelectorAll('[data-cell]');blocked.forEach(i=>cells[i].classList.add('blocked'));let pos=0;cells[0].classList.add('player');bindCells(ctx.board,(i)=>{if(blocked.has(i))return;if(!adjacent(pos,i,4))return;pos=i;cells.forEach(c=>c.classList.remove('player'));cells[pos].classList.add('player');if(pos===15)ctx.finish(true,'Route completed safely.');});}
+  function priorityQueue(ctx) { choiceGame(ctx,'Which task should go first?',['Write a nice-to-have note due next month','Fix a production outage affecting users','Refactor a harmless comment','Organise old screenshots'],1,'Highest-impact urgent work comes first.'); }
+  function scheduleBuilder(ctx) { choiceGame(ctx,'A task takes 2 hours and must happen before its dependent review. Which slot is valid?',['09:00–11:00','11:00–13:00','13:00–15:00','15:00–17:00'],0,'Dependency respected.'); }
+  function riskReward(ctx) { choiceGame(ctx,'You have a risk budget of 5. Which plan stays inside it while maximising reward?',['Reward 8 / Risk 7','Reward 6 / Risk 5','Reward 5 / Risk 6','Reward 4 / Risk 8'],1,'Best reward within the risk budget.'); }
+
   function render(id, ctx) {
     resetMessage(ctx);
-    if (id === 'grid' || id === 'maze') return movementGame(ctx, id);
+    if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
     if (id === 'balance') return balance(ctx);
     if (id === 'code') return codeBreaker(ctx);
     if (id === 'circuit') return orderedButtons(ctx, [1, 2, 3, 4], 'Activate the nodes in numerical order.', 'Circuit powered.');
@@ -295,6 +402,34 @@
     if (id === 'detective') return detective(ctx);
     if (id === 'algorithm') return algorithm(ctx);
     if (id === 'bug') return bugHunter(ctx);
+    if (id === 'routeplan') return routePlanner(ctx);
+    if (id === 'priority') return priorityQueue(ctx);
+    if (id === 'schedule') return scheduleBuilder(ctx);
+    if (id === 'risk') return riskReward(ctx);
+    if (id === 'numberrecall') return numberRecall(ctx);
+    if (id === 'cardmemory') return cardMemory(ctx);
+    if (id === 'delayed') return delayedRecall(ctx);
+    if (id === 'dual') return dualMemory(ctx);
+    if (id === 'gonogo') return goNoGo(ctx);
+    if (id === 'changes') return changeDetection(ctx);
+    if (id === 'peripheral') return peripheral(ctx);
+    if (id === 'moving') return movingTarget(ctx);
+    if (id === 'reaction') return reactionLab(ctx);
+    if (id === 'quickmath') return quickMath(ctx);
+    if (id === 'compare') return rapidCompare(ctx);
+    if (id === 'visualsearch') return visualSearch(ctx);
+    if (id === 'binary') return binaryLogic(ctx);
+    if (id === 'sort') return sortLab(ctx);
+    if (id === 'output') return outputPredictor(ctx);
+    if (id === 'graph') return graphTraversal(ctx);
+    if (id === 'stack') return stackQueue(ctx);
+    if (id === 'recursion') return recursionTrace(ctx);
+    if (id === 'matrix') return matrixLogic(ctx);
+    if (id === 'truth') return truthTable(ctx);
+    if (id === 'deduction') return deductionGrid(ctx);
+    if (id === 'conditional') return conditionalLogic(ctx);
+    if (id === 'operator') return missingOperator(ctx);
+    if (id === 'debug') return debugAlgorithm(ctx);
     ctx.board.innerHTML = '<p>That game is not available yet. Choose another challenge.</p>';
   }
 

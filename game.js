@@ -1130,6 +1130,13 @@ function showResults() {
   });
   Store.updateStats(sessionData);
 
+  if (G.mode === 'plan') {
+    const plan = Store.getPlan() || { category: G.category, rounds: G.totalRounds, created: Date.now(), completedSessions: 0 };
+    plan.completedSessions = (plan.completedSessions || 0) + 1;
+    plan.lastCompleted = Date.now();
+    Store.savePlan(plan);
+  }
+
   // Daily
   if (G.mode === 'daily') {
     const streak = Store.markDailyComplete(G.score);
