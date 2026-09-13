@@ -111,6 +111,9 @@ const Store = {
     return data.streak;
   },
 
+  getArcadeProgress() { try { return JSON.parse(localStorage.getItem('42brain-arcade-progress') || '{}'); } catch { return {}; } },
+  saveArcadeProgress(progress) { this.setRawArcadeProgress(progress); },
+  setRawArcadeProgress(progress) { try { localStorage.setItem('42brain-arcade-progress', JSON.stringify(progress || {})); } catch {} },
   getProfile() { return this.get('profile', { name: 'Player', plan: null }); },
   saveProfile(profile) { this.set('profile', { ...this.getProfile(), ...profile }); },
   levelInfo() {
@@ -129,6 +132,7 @@ const Store = {
       stats: this.getStats(),
       achievements: this.getAchievements(),
       highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') },
+      arcade: this.getArcadeProgress(),
       daily: this.getDailyData(), version: this.VERSION,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -139,7 +143,7 @@ const Store = {
   },
 
   backupData() {
-    const payload = { backedUp: new Date().toISOString(), version: this.VERSION, settings: this.getSettings(), stats: this.getStats(), achievements: this.getAchievements(), daily: this.getDailyData(), profile: this.getProfile() };
+    const payload = { backedUp: new Date().toISOString(), version: this.VERSION, settings: this.getSettings(), stats: this.getStats(), achievements: this.getAchievements(), daily: this.getDailyData(), profile: this.getProfile(), arcade: this.getArcadeProgress() };
     this.set('backup', payload);
     return payload;
   },
@@ -147,6 +151,7 @@ const Store = {
     if (!this.validateImport(payload)) throw new Error('Invalid 42 Brain backup');
     this.backupData();
     ['settings','stats','achievements','daily','profile'].forEach(k => { if (payload[k] !== undefined) this.set(k, payload[k]); });
+    if (payload.arcade) this.setRawArcadeProgress(payload.arcade);
     return true;
   },
   validateImport(payload) {

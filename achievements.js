@@ -22,6 +22,12 @@ const ACHIEVEMENTS = [
   { id: 'early_bird',      name: 'Early Bird',             desc: 'Play before 7am',                                     icon: '🐦', tier: 'bronze' },
   { id: 'attention_ace',   name: 'Eagle Eye',              desc: 'Find all targets in an attention puzzle without error',icon: '🦅', tier: 'silver' },
   { id: 'custom_warrior',  name: 'Custom Warrior',         desc: 'Complete a custom-mode session',                      icon: 'settings', tier: 'bronze' },
+  { id: 'arcade_first',    name: 'Arcade Initiate',         desc: 'Complete your first Brain Arcade challenge',          icon: 'brain', tier: 'bronze' },
+  { id: 'arcade_10',       name: 'Arcade Regular',           desc: 'Complete 10 Brain Arcade challenges',                 icon: 'target', tier: 'silver' },
+  { id: 'arcade_25',       name: 'Arcade Veteran',           desc: 'Complete 25 Brain Arcade challenges',                 icon: 'bolt', tier: 'gold' },
+  { id: 'mastery_first',   name: 'First Mastery',            desc: 'Master any Brain Arcade game',                        icon: 'brain', tier: 'silver' },
+  { id: 'mastery_five',    name: 'Lab Master',               desc: 'Master five Brain Arcade games',                      icon: 'chart', tier: 'gold' },
+  { id: 'full_spectrum',   name: 'Full Spectrum',             desc: 'Complete a challenge in every training lane',        icon: 'target', tier: 'gold' },
 ];
 
 const AchievementSystem = {

@@ -23,11 +23,10 @@ I couldn't find a good offline practice tool that actually *felt* like the real 
 
 It runs **100% offline**, needs **zero installation**, and opens straight from a file.
 
-It also includes a premium Game Lab with focused workouts for sequences, memory,
-mental math, reaction speed, visual attention, and a 42-question exam simulation.
+It also includes a premium Game Lab with 47 focused challenges across memory, focus, speed, strategy, math, technical thinking and experimental logic, plus a 42-question exam simulation.
 Progress is saved locally with XP, levels, category accuracy, mistake review,
-custom sessions, daily challenges, achievements, two-player mode, and shareable
-results.
+custom sessions, adaptive weakness-based plans, daily challenges, achievements,
+game mastery, streaks, two-player mode, and shareable results.
 
 ---
 
@@ -102,12 +101,14 @@ Difficulty scales across rounds — early rounds are gentle, later rounds will t
 
 ```
 42-brain/
-├── index.html      # The whole game shell (splash, game, results screens)
+├── index.html      # App shell, workspace, game screens and dashboards
 ├── style.css       # Minimalistic UI — clean, fast, no distractions
 ├── puzzles.js      # All puzzle generators with difficulty scaling
 ├── game.js         # Core engine: timer, scoring, rendering, input handling
 ├── manifest.webmanifest # Installable app metadata
 ├── service-worker.js # Offline app shell caching
+├── js/arcade/catalog.js # Arcade catalogue and categories
+├── js/arcade/games.js # Arcade game implementations
 └── README.md       # This file (the one you're reading, hi 👋)
 ```
 
