@@ -94,18 +94,30 @@ const Store = {
 
   /* ── DAILY CHALLENGE ── */
   getDailyData()  { return this.get('daily', { lastDate: null, streak: 0, completed: {} }); },
-  todayKey()      { return new Date().toISOString().slice(0, 10); },
+  todayKey()      { const d = new Date(); const pad = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; },
   completedToday(){ return this.getDailyData().lastDate === this.todayKey(); },
 
   markDailyComplete(score) {
     const data = this.getDailyData();
     const today = this.todayKey();
     const yest  = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    data.streak = (data.lastDate === yest) ? data.streak + 1 : 1;
+    const alreadyCompletedToday = data.lastDate === today;
+    data.streak = alreadyCompletedToday ? Math.max(1, data.streak || 0) : (data.lastDate === yest ? (data.streak || 0) + 1 : 1);
     data.lastDate = today;
-    data.completed[today] = score;
+    data.completed = data.completed || {};
+    data.completed[today] = Math.max(Number(data.completed[today]) || 0, Number(score) || 0);
     data.history = data.history || [];
-    data.history.unshift({ date: today, score, streak: data.streak });
+    if (alreadyCompletedToday) {
+      const todayEntry = data.history.find(entry => entry.date === today);
+      if (todayEntry) {
+        todayEntry.score = data.completed[today];
+        todayEntry.streak = data.streak;
+      } else {
+        data.history.unshift({ date: today, score: data.completed[today], streak: data.streak });
+      }
+    } else {
+      data.history.unshift({ date: today, score: data.completed[today], streak: data.streak });
+    }
     data.history = data.history.slice(0, 90);
     this.set('daily', data);
     return data.streak;
@@ -133,30 +145,42 @@ const Store = {
       achievements: this.getAchievements(),
       highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') },
       arcade: this.getArcadeProgress(),
-      daily: this.getDailyData(), version: this.VERSION,
+      daily: this.getDailyData(),
+      profile: this.getProfile(),
+      plan: this.getPlan(),
+      customPuzzles: this.getCustomPuzzles(),
+      version: this.VERSION,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = Object.assign(document.createElement('a'), { href: url, download: `42brain_${this.todayKey()}.json` });
     a.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
   backupData() {
-    const payload = { backedUp: new Date().toISOString(), version: this.VERSION, settings: this.getSettings(), stats: this.getStats(), achievements: this.getAchievements(), daily: this.getDailyData(), profile: this.getProfile(), arcade: this.getArcadeProgress() };
+    const payload = { backedUp: new Date().toISOString(), version: this.VERSION, settings: this.getSettings(), stats: this.getStats(), achievements: this.getAchievements(), daily: this.getDailyData(), profile: this.getProfile(), plan: this.getPlan(), customPuzzles: this.getCustomPuzzles(), highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') }, arcade: this.getArcadeProgress() };
     this.set('backup', payload);
     return payload;
   },
   importData(payload) {
     if (!this.validateImport(payload)) throw new Error('Invalid 42 Brain backup');
     this.backupData();
-    ['settings','stats','achievements','daily','profile'].forEach(k => { if (payload[k] !== undefined) this.set(k, payload[k]); });
+    ['settings','stats','achievements','daily','profile','plan','custom_puzzles'].forEach(k => {
+      const sourceKey = k === 'custom_puzzles' ? 'customPuzzles' : k;
+      if (payload[sourceKey] !== undefined) this.set(k, payload[sourceKey]);
+    });
+    if (payload.highScores && typeof payload.highScores === 'object' && !Array.isArray(payload.highScores)) {
+      Object.entries(payload.highScores).forEach(([mode, scores]) => {
+        if (Array.isArray(scores) && ['all','training','test','mixed','daily'].includes(mode)) this.set('scores_' + mode, scores.slice(0, 100));
+      });
+    }
     if (payload.arcade) this.setRawArcadeProgress(payload.arcade);
     return true;
   },
   validateImport(payload) {
-    return !!(payload && typeof payload === 'object' && payload.stats && typeof payload.stats === 'object' &&
-      payload.settings && typeof payload.settings === 'object' &&
+    return !!(payload && typeof payload === 'object' && !Array.isArray(payload) && payload.stats && typeof payload.stats === 'object' && !Array.isArray(payload.stats) &&
+      payload.settings && typeof payload.settings === 'object' && !Array.isArray(payload.settings) &&
       (!payload.stats.mistakes || Array.isArray(payload.stats.mistakes)) &&
       (!payload.stats.sessions || Array.isArray(payload.stats.sessions)));
   },
@@ -168,7 +192,7 @@ const Store = {
 
   clearAll() {
     this.backupData();
-    Object.keys(localStorage).filter(k => k.startsWith(this.P) && k !== this.P + 'backup').forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => (k.startsWith(this.P) && k !== this.P + 'backup') || k === '42brain-arcade-progress' || k === '42brain-arcade-score' || k.startsWith('42brain-best-')).forEach(k => localStorage.removeItem(k));
   },
 };
 

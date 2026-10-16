@@ -202,7 +202,7 @@
         } catch (_) { /* Audio is optional in offline and restricted browsers. */ }
       },
       isDone: () => message.dataset.done === 'true',
-      finish(success, text) {
+      finish(success, text, details = {}) {
         if (message.dataset.done === 'true') return;
         message.dataset.done = 'true';
         message.className = `game-message ${success ? 'success' : 'failure'}`;
@@ -211,9 +211,18 @@
         progress.plays += 1;
         progress.gameStats[currentId] = progress.gameStats[currentId] || { plays: 0, wins: 0 };
         progress.gameStats[currentId].plays += 1;
+        const submittedScore = Number(details.score);
+        const earnedScore = submittedScore > 0
+          ? Math.max(1, Math.min(1000, Math.floor(submittedScore)))
+          : success ? 10 : 0;
+        if (earnedScore > 0) {
+          progress.score += earnedScore;
+          const best = Math.max(earnedScore, bestFor(currentId));
+          localStorage.setItem(`42brain-best-${currentId}`, String(best));
+          $('arcadeBest').textContent = `${best} pts`;
+        }
         if (success) {
           progress.gameStats[currentId].wins += 1;
-          progress.score += 10;
           progress.completed[currentId] = true;
           const arcadeWins = Object.values(progress.gameStats).reduce((sum, item) => sum + Number(item.wins || 0), 0);
           if (window.Store) {
@@ -227,9 +236,6 @@
             if (['memory','focus','speed','strategy','math','technical','lab'].every(l => lanes.has(l))) Store.unlockAchievement('full_spectrum');
           }
           progress.wins = Object.keys(progress.completed).length;
-          const best = Math.max(10, bestFor(currentId));
-          localStorage.setItem(`42brain-best-${currentId}`, String(best));
-          $('arcadeBest').textContent = `${best} pts`;
         }
         saveProgress();
       }
@@ -251,7 +257,8 @@
     $('workspacePlan')?.addEventListener('click', () => document.getElementById('planBtn')?.click());
     $('workspaceExam')?.addEventListener('click', () => document.getElementById('examBtn')?.click());
     $('workspaceBack').addEventListener('click', showSplash);
-    $('workspaceClassic').addEventListener('click', showSplash);
+    $('workspaceClassic').addEventListener('click', () => $('startBtn')?.click());
+    $('workspaceHeroTrain')?.addEventListener('click', () => $('startBtn')?.click());
     $('arcadeHelp').addEventListener('click', () => $('arcadeHelpPanel').classList.toggle('hidden'));
     $('workspaceReset').addEventListener('click', () => {
       progress = { score: 0, wins: 0, plays: 0, completed: {}, gameStats: {} };
@@ -274,6 +281,8 @@
     loadProgress();
     document.querySelectorAll('.game-catalog').forEach(node => renderCards(node, node.dataset.filter));
     bindWorkspace();
+    setPage('home');
+    renderWorkspaceHome();
     renderProgress();
   });
 }());

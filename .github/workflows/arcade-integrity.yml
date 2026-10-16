@@ -1,0 +1,38 @@
+name: Arcade integrity
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/premium-42-brain-foundation
+      - feat/premium-product-complete
+
+jobs:
+  arcade-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate JavaScript syntax
+        run: |
+          node --check arcade.js
+          node --check js/arcade/catalog.js
+          node --check js/arcade/games.js
+      - name: Validate game catalogue
+        run: node scripts/check-arcade-integrity.mjs
+
+      - name: Check local storage and native app
+        run: |
+          node --check storage.js
+          node --check achievements.js
+          node --check product-enhancements.js
+          node --test tests/*.test.cjs
+          cd apps/android
+          npm install --no-audit --no-fund
+          npm run typecheck
+          npm run export

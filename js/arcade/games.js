@@ -301,18 +301,63 @@
   }
 
   function cardMemory(ctx) {
-    const symbols=['▲','●','■','◆'];
-    const cards=shuffled([...symbols,...symbols]); let first=null, locked=false, matches=0;
-    ctx.board.innerHTML=`<p class="game-instruction">Find all matching pairs.</p><div class="memory-cards">${cards.map((_,i)=>`<button type="button" data-card="${i}" aria-label="Hidden card ${i+1}">?</button>`).join('')}</div>`;
-    const buttons=[...ctx.board.querySelectorAll('[data-card]')];
-    buttons.forEach((b,i)=>b.addEventListener('click',()=>{
-      if(locked||ctx.isDone()||b.classList.contains('matched')||b===first)return;
-      b.textContent=cards[i]; b.classList.add('revealed');
-      if(first===null){first=b;return;}
-      const j=Number(first.dataset.card);
-      if(cards[j]===cards[i]){first.classList.add('matched');b.classList.add('matched');matches++;first=null;if(matches===symbols.length)ctx.finish(true,'All pairs found.');}
-      else {locked=true;ctx.later(()=>{first.textContent='?';b.textContent='?';first.classList.remove('revealed');b.classList.remove('revealed');first=null;locked=false;},650);}
-    }));
+    const rounds = [4, 6, 8];
+    const symbols = ['▲', '●', '■', '◆', '✦', '⬟', '☾', '✚'];
+    let round = 0, score = 0, moves = 0, first = null, locked = false, matches = 0;
+    const buildRound = () => {
+      const pairCount = rounds[round];
+      const cards = shuffled(symbols.slice(0, pairCount).concat(symbols.slice(0, pairCount)));
+      first = null; locked = false; matches = 0; moves = 0;
+      ctx.board.innerHTML = `
+        <div class="game-instruction">Find every matching pair. The board expands each round. Fewer flips earn more points.</div>
+        <div class="game-status"><span>ROUND <b>${round + 1} / ${rounds.length}</b></span><span>PAIRS <b>0 / ${pairCount}</b></span><span>POINTS <b id="cmScore">${score}</b></span></div>
+        <div class="memory-cards progressive-memory" style="--card-count:${pairCount * 2}">${cards.map((_, i) => `<button type="button" data-card="${i}" aria-label="Hidden card ${i + 1}">?</button>`).join('')}</div>
+        <p id="cmFeedback" class="game-instruction" aria-live="polite">Memorise the board. Find a pair to begin.</p>`;
+      const buttons = [...ctx.board.querySelectorAll('[data-card]')];
+      const feedback = ctx.board.querySelector('#cmFeedback');
+      buttons.forEach((button, index) => button.addEventListener('click', () => {
+        if (locked || ctx.isDone() || button.classList.contains('matched') || button === first) return;
+        button.textContent = cards[index];
+        button.classList.add('revealed');
+        if (!first) { first = button; return; }
+        moves++;
+        const firstIndex = Number(first.dataset.card);
+        if (cards[firstIndex] === cards[index]) {
+          first.classList.add('matched'); button.classList.add('matched');
+          first.disabled = true; button.disabled = true;
+          first = null; matches++;
+          score += Math.max(5, 18 - Math.floor(moves / 2));
+          ctx.board.querySelector('#cmScore').textContent = score;
+          ctx.board.querySelector('.game-status span:nth-child(2) b').textContent = `${matches} / ${pairCount}`;
+          feedback.textContent = 'Match found. Keep going.';
+          if (matches === pairCount) {
+            score += Math.max(0, 40 - moves * 2);
+            ctx.board.querySelector('#cmScore').textContent = score;
+            if (round === rounds.length - 1) {
+              ctx.finish(true, `Memory master. Final board cleared in ${moves} flips. Total score: ${score} points.`, { score });
+            } else {
+              round++;
+              feedback.textContent = 'Board cleared. Next round adds more pairs.';
+              const next = document.createElement('button');
+              next.type = 'button'; next.className = 'cta-btn'; next.textContent = 'Next memory board';
+              next.addEventListener('click', buildRound);
+              ctx.board.appendChild(next);
+            }
+          }
+        } else {
+          locked = true;
+          feedback.textContent = 'No match. Remember both symbols before they turn over.';
+          const previous = first;
+          ctx.later(() => {
+            if (ctx.isDone()) return;
+            previous.textContent = '?'; button.textContent = '?';
+            previous.classList.remove('revealed'); button.classList.remove('revealed');
+            first = null; locked = false;
+          }, 700);
+        }
+      }));
+    };
+    buildRound();
   }
 
   function delayedRecall(ctx) {
@@ -364,7 +409,69 @@
     btn.onclick=()=>{if(!ready){ctx.finish(false,'Too early. Reset and wait for GO.');return;}const ms=Math.round(performance.now()-start);ctx.finish(true,`Reaction recorded: ${ms} ms.`);};
   }
 
-  function quickMath(ctx) { const a=3+Math.floor(Math.random()*12),b=2+Math.floor(Math.random()*9),op=pick(['+','−','×']);const ans=op==='+'?a+b:op==='−'?a-b:a*b;const opts=shuffled([ans,ans+pick([-3,-2,2,3]),ans+pick([-5,4]),ans+pick([-7,6])]);choiceGame(ctx,`Solve: <strong>${a} ${op} ${b} = ?</strong>`,opts,opts.indexOf(ans),'Correct calculation.'); }
+  function quickMath(ctx) {
+    const totalRounds = 10;
+    let round = 1, score = 0, combo = 0, misses = 0, resolved = false;
+    const question = () => {
+      const op = pick(['+', '−', '×']);
+      const a = op === '×' ? 2 + Math.floor(Math.random() * (4 + Math.floor(round / 2))) : 8 + Math.floor(Math.random() * (8 + round * 2));
+      const b = op === '×' ? 2 + Math.floor(Math.random() * 12) : 2 + Math.floor(Math.random() * (9 + round));
+      const answer = op === '+' ? a + b : op === '−' ? a - b : a * b;
+      const choices = new Set([answer]);
+      while (choices.size < 4) {
+        const offset = Math.max(3, Math.floor(Math.random() * (round + 4)));
+        choices.add(answer + (Math.random() < .5 ? -offset : offset));
+      }
+      return { prompt: `${a} ${op} ${b} = ?`, answer, options: shuffled([...choices]) };
+    };
+    ctx.board.innerHTML = `
+      <div class="game-instruction">Ten rapid calculations. Correct streaks boost your score. Three misses end the run.</div>
+      <div class="game-status"><span>ROUND <b id="qmRound">1 / ${totalRounds}</b></span><span>COMBO <b id="qmCombo">0×</b></span><span>SCORE <b id="qmScore">0</b></span><span>MISSES <b id="qmMisses">0 / 3</b></span></div>
+      <div id="qmQuestion" class="logic-question"></div>
+      <div id="qmOptions" class="choice-column"></div>
+      <p id="qmFeedback" class="game-instruction" aria-live="polite">Ready when you are.</p>`;
+    const showRound = () => {
+      if (ctx.isDone()) return;
+      resolved = false;
+      const q = question();
+      ctx.board.querySelector('#qmRound').textContent = `${round} / ${totalRounds}`;
+      ctx.board.querySelector('#qmQuestion').textContent = q.prompt;
+      ctx.board.querySelector('#qmFeedback').textContent = 'Answer quickly, but accurately.';
+      const options = ctx.board.querySelector('#qmOptions');
+      options.innerHTML = q.options.map(value => `<button type="button" data-value="${value}">${value}</button>`).join('');
+      const settle = value => {
+        if (resolved || ctx.isDone()) return;
+        resolved = true;
+        const correct = Number(value) === q.answer;
+        if (correct) {
+          combo++;
+          score += 10 + Math.min(30, combo * 4) + Math.max(0, 10 - round);
+          ctx.board.querySelector('#qmFeedback').textContent = combo > 1 ? `Correct — ${combo} in a row.` : 'Correct. Keep moving.';
+        } else {
+          combo = 0; misses++;
+          ctx.board.querySelector('#qmMisses').textContent = `${misses} / 3`;
+          ctx.board.querySelector('#qmFeedback').textContent = `Answer: ${q.answer}. Reset your focus for the next one.`;
+        }
+        ctx.board.querySelector('#qmScore').textContent = score;
+        ctx.board.querySelector('#qmCombo').textContent = `${combo}×`;
+        options.querySelectorAll('button').forEach(button => {
+          button.disabled = true;
+          if (Number(button.dataset.value) === q.answer) button.classList.add('selected');
+        });
+        if (misses >= 3) {
+          ctx.finish(false, `Calculation run ended at round ${round}. Score: ${score} points.`, { score });
+        } else if (round === totalRounds) {
+          ctx.finish(true, `Ten-round calculation run complete. Score: ${score} points, best combo: ${combo}×.`, { score });
+        } else {
+          round++;
+          ctx.later(showRound, 420);
+        }
+      };
+      options.querySelectorAll('button').forEach(button => button.addEventListener('click', () => settle(button.dataset.value)));
+      ctx.later(() => { if (!resolved && !ctx.isDone()) settle('__timeout__'); }, Math.max(4500, 9000 - round * 350));
+    };
+    showRound();
+  }
   function rapidCompare(ctx) { const a=10+Math.floor(Math.random()*90),b=10+Math.floor(Math.random()*90);const opts=['LEFT','RIGHT'];choiceGame(ctx,`${a} or ${b}: which value is larger?`,opts,a>b?0:1,'Fast comparison.'); }
   function visualSearch(ctx) { const target=pick(['◆','●','▲']);const values=range(20).map(()=>pick(['◇','○','△','■']));const pos=Math.floor(Math.random()*values.length);values[pos]=target;ctx.board.innerHTML=`<p class="game-instruction">Find the only <strong>${target}</strong>.</p><div class="target-field">${values.map((v,i)=>`<button type="button" data-i="${i}">${v}</button>`).join('')}</div>`;ctx.board.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>ctx.finish(Number(b.dataset.i)===pos,Number(b.dataset.i)===pos?'Match found.':'Wrong symbol.')); }
   function binaryLogic(ctx) { const n=5+Math.floor(Math.random()*26),bin=n.toString(2),opts=shuffled([n,n+1,n-1,n+4]);choiceGame(ctx,`What decimal number is <strong>${bin}<sub>2</sub></strong>?`,opts,opts.indexOf(n),'Binary converted correctly.'); }
@@ -385,8 +492,249 @@
   function scheduleBuilder(ctx) { choiceGame(ctx,'A task takes 2 hours and must happen before its dependent review. Which slot is valid?',['09:00–11:00','11:00–13:00','13:00–15:00','15:00–17:00'],0,'Dependency respected.'); }
   function riskReward(ctx) { choiceGame(ctx,'You have a risk budget of 5. Which plan stays inside it while maximising reward?',['Reward 8 / Risk 7','Reward 6 / Risk 5','Reward 5 / Risk 6','Reward 4 / Risk 8'],1,'Best reward within the risk budget.'); }
 
+
+  /* Multi-round flagship game: the sequence grows every round and includes limited lives. */
+  function neuralSequence(ctx) {
+    const size = 4;
+    const totalRounds = 5;
+    let round = 1, lives = 2, score = 0, sequence = [], inputIndex = 0, locked = true;
+    const makeSequence = length => {
+      const result = [];
+      while (result.length < length) {
+        const next = Math.floor(Math.random() * size * size);
+        if (result[result.length - 1] !== next) result.push(next);
+      }
+      return result;
+    };
+    ctx.board.innerHTML = `
+      <div class="game-instruction">Watch the signal, then replay it in the exact order. Every round adds one step.</div>
+      <div class="game-status"><span>ROUND <b id="nsRound">1 / ${totalRounds}</b></span><span>POINTS <b id="nsScore">0</b></span><span>ERRORS <b id="nsLives">2</b></span></div>
+      <div class="play-grid neural-sequence" style="--size:4" role="grid">${range(16).map(i => `<button type="button" data-signal="${i}" aria-label="Signal cell ${i + 1}"></button>`).join('')}</div>
+      <div class="game-instruction" id="nsHint" aria-live="polite">Get ready…</div>
+      <button id="nsStart" type="button" class="cta-btn">Start sequence</button>`;
+    const cells = [...ctx.board.querySelectorAll('[data-signal]')];
+    const hint = ctx.board.querySelector('#nsHint');
+    const startButton = ctx.board.querySelector('#nsStart');
+    const flash = (cell, delay) => ctx.later(() => {
+      if (!ctx.isDone()) { cells[cell].classList.add('lit'); ctx.tone(300 + cell * 22); }
+      ctx.later(() => cells[cell].classList.remove('lit'), 210);
+    }, delay);
+    const beginRound = () => {
+      if (ctx.isDone()) return;
+      locked = true; inputIndex = 0;
+      cells.forEach(cell => { cell.disabled = true; cell.classList.remove('lit', 'picked', 'wrong'); });
+      sequence = makeSequence(round + 2);
+      ctx.board.querySelector('#nsRound').textContent = `${round} / ${totalRounds}`;
+      hint.textContent = 'Watch carefully…';
+      startButton.disabled = true;
+      sequence.forEach((cell, index) => flash(cell, 450 + index * 520));
+      ctx.later(() => {
+        if (ctx.isDone()) return;
+        locked = false;
+        cells.forEach(cell => { cell.disabled = false; });
+        hint.textContent = 'Your turn — repeat the signal.';
+        startButton.textContent = 'Replay round';
+        startButton.disabled = false;
+      }, 450 + sequence.length * 520);
+    };
+    startButton.addEventListener('click', () => {
+      if (!locked || ctx.isDone()) return;
+      beginRound();
+    });
+    cells.forEach((cell, index) => cell.addEventListener('click', () => {
+      if (locked || ctx.isDone()) return;
+      if (index !== sequence[inputIndex]) {
+        lives -= 1;
+        ctx.board.querySelector('#nsLives').textContent = lives;
+        cell.classList.add('wrong');
+        locked = true;
+        hint.textContent = lives ? 'Signal missed. One life lost — watch the sequence again.' : 'No lives left. Reset to take another run.';
+        if (!lives) {
+          ctx.finish(false, `Run ended at round ${round}. You scored ${score} points.`, { score });
+        } else {
+          startButton.textContent = 'Try round again';
+          startButton.disabled = false;
+        }
+        return;
+      }
+      cell.classList.add('picked');
+      score += 10 + round * 2;
+      ctx.board.querySelector('#nsScore').textContent = score;
+      inputIndex += 1;
+      if (inputIndex === sequence.length) {
+        locked = true;
+        score += 15;
+        ctx.board.querySelector('#nsScore').textContent = score;
+        if (round === totalRounds) {
+          ctx.finish(true, `Neural sequence mastered. Final score: ${score} points.`, { score });
+          return;
+        }
+        round += 1;
+        hint.textContent = 'Round cleared. The next sequence is longer.';
+        startButton.textContent = 'Begin next round';
+        startButton.disabled = false;
+      }
+    }));
+  }
+
+  /* Mastermind-style deduction: exact and misplaced digit feedback across 3 vaults. */
+  function cipherVault(ctx) {
+    const roundsTotal = 3;
+    let round = 1, attempts = 0, totalScore = 0, secret = [], solved = false;
+    const newCode = () => shuffled(range(10)).slice(0, 4);
+    const buildRound = () => {
+      secret = newCode(); attempts = 0; solved = false;
+      ctx.board.innerHTML = `
+        <div class="game-instruction">Crack the 4-digit vault code. Digits never repeat. Feedback tells you how many digits are correct and how many are in the wrong position.</div>
+        <div class="game-status"><span>VAULT <b id="cvRound">${round} / ${roundsTotal}</b></span><span>ATTEMPTS <b id="cvAttempts">0 / 7</b></span><span>SCORE <b id="cvScore">${totalScore}</b></span></div>
+        <form id="cvForm" class="cipher-form">
+          <label for="cvInput">Enter four unique digits</label>
+          <input id="cvInput" class="code-input" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="e.g. 4821" required>
+          <button class="cta-btn" type="submit">Check code</button>
+        </form>
+        <p id="cvFeedback" class="game-instruction" aria-live="polite">You have seven attempts per vault.</p>
+        <ol id="cvHistory" class="cipher-history" aria-label="Previous guesses"></ol>`;
+      const form = ctx.board.querySelector('#cvForm');
+      const input = ctx.board.querySelector('#cvInput');
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        if (ctx.isDone() || solved) return;
+        const guessText = input.value.trim();
+        if (!/^\d{4}$/.test(guessText) || new Set(guessText).size !== 4) {
+          ctx.board.querySelector('#cvFeedback').textContent = 'Enter exactly four different digits.';
+          return;
+        }
+        const guess = [...guessText].map(Number);
+        const exact = guess.filter((digit, i) => digit === secret[i]).length;
+        const misplaced = guess.filter((digit, i) => secret.includes(digit) && digit !== secret[i]).length;
+        attempts++;
+        ctx.board.querySelector('#cvAttempts').textContent = `${attempts} / 7`;
+        const row = document.createElement('li');
+        row.textContent = `${guessText} — ${exact} exact, ${misplaced} misplaced`;
+        ctx.board.querySelector('#cvHistory').prepend(row);
+        input.value = '';
+        if (exact === 4) {
+          solved = true;
+          const earned = Math.max(40, 140 - (attempts - 1) * 15);
+          totalScore += earned;
+          ctx.board.querySelector('#cvScore').textContent = totalScore;
+          if (round === roundsTotal) {
+            ctx.finish(true, `All three vaults opened. ${totalScore} points — ${attempts} attempts on the final vault.`, { score: totalScore });
+            return;
+          }
+          ctx.board.querySelector('#cvFeedback').textContent = `Vault opened: +${earned} points. Prepare for the next vault.`;
+          const next = document.createElement('button');
+          next.type = 'button'; next.className = 'cta-btn'; next.textContent = 'Enter next vault';
+          next.addEventListener('click', () => { round++; buildRound(); });
+          form.replaceWith(next);
+        } else if (attempts >= 7) {
+          ctx.finish(false, `Vault locked. You reached vault ${round} with ${totalScore} points. Reset to try again.`, { score: totalScore });
+        } else {
+          ctx.board.querySelector('#cvFeedback').textContent = `${exact} exact position(s), ${misplaced} correct digit(s) in another position.`;
+          input.focus();
+        }
+      });
+      input.focus();
+    };
+    buildRound();
+  }
+
+
+  /* Six varied timed rounds with a combo multiplier and limited lives. */
+  function logicGauntlet(ctx) {
+    const totalRounds = 6;
+    let round = 1, lives = 2, score = 0, combo = 0, answered = false;
+    const makeQuestion = () => {
+      const mode = Math.floor(Math.random() * 3);
+      if (mode === 0) {
+        const a = 3 + Math.floor(Math.random() * (round * 4 + 4));
+        const b = 2 + Math.floor(Math.random() * (round * 3 + 5));
+        const op = pick(['+', '−', '×']);
+        const answer = op === '+' ? a + b : op === '−' ? a - b : a * b;
+        return { prompt: `Solve under pressure: ${a} ${op} ${b} = ?`, answer, options: makeOptions(answer, round) };
+      }
+      if (mode === 1) {
+        const step = 2 + Math.floor(Math.random() * (round + 2));
+        const start = 1 + Math.floor(Math.random() * 12);
+        const values = [start, start + step, start + step * 2, start + step * 3];
+        const answer = start + step * 4;
+        return { prompt: `Find the next value: ${values.join(' · ')} · ?`, answer, options: makeOptions(answer, round) };
+      }
+      const people = shuffled(['Ari', 'Bea', 'Cal', 'Dee']);
+      const answer = people[0];
+      return {
+        prompt: `${people[0]} finished before ${people[1]}. ${people[1]} finished before ${people[2]}. ${people[3]} finished after ${people[2]}. Who finished first?`,
+        answer,
+        options: shuffled(people)
+      };
+    };
+    const makeOptions = (answer, difficulty) => {
+      const values = new Set([answer]);
+      while (values.size < 4) {
+        const spread = Math.max(3, difficulty * 4);
+        const candidate = answer + (Math.floor(Math.random() * spread * 2) - spread);
+        if (candidate !== answer) values.add(candidate);
+      }
+      return shuffled([...values]);
+    };
+    ctx.board.innerHTML = `
+      <div class="game-instruction">Six quick rounds. Correct answers build your combo; two mistakes end the run. Difficulty increases as you advance.</div>
+      <div class="game-status"><span>ROUND <b id="lgRound">1 / ${totalRounds}</b></span><span>COMBO <b id="lgCombo">0×</b></span><span>SCORE <b id="lgScore">0</b></span><span>LIVES <b id="lgLives">2</b></span></div>
+      <div id="lgQuestion" class="logic-question"></div>
+      <div id="lgOptions" class="choice-column"></div>
+      <p id="lgFeedback" class="game-instruction" aria-live="polite">Round one. Focus.</p>`;
+    const showRound = () => {
+      if (ctx.isDone()) return;
+      answered = false;
+      const question = makeQuestion();
+      ctx.board.querySelector('#lgRound').textContent = `${round} / ${totalRounds}`;
+      ctx.board.querySelector('#lgQuestion').textContent = question.prompt;
+      ctx.board.querySelector('#lgFeedback').textContent = 'Choose before the timer runs out.';
+      const options = ctx.board.querySelector('#lgOptions');
+      options.innerHTML = question.options.map(option => `<button type="button" data-answer="${String(option)}">${String(option)}</button>`).join('');
+      const resolve = value => {
+        if (answered || ctx.isDone()) return;
+        answered = true;
+        const correct = String(value) === String(question.answer);
+        if (correct) {
+          combo++;
+          score += 20 + round * 5 + Math.min(25, combo * 5);
+          ctx.board.querySelector('#lgScore').textContent = score;
+          ctx.board.querySelector('#lgCombo').textContent = `${combo}×`;
+          ctx.board.querySelector('#lgFeedback').textContent = combo > 1 ? `Correct — combo ${combo}×. Keep it alive.` : 'Correct. Next round.';
+        } else {
+          lives--;
+          combo = 0;
+          ctx.board.querySelector('#lgLives').textContent = lives;
+          ctx.board.querySelector('#lgCombo').textContent = '0×';
+          ctx.board.querySelector('#lgFeedback').textContent = `Not quite. Correct answer: ${question.answer}.`;
+        }
+        options.querySelectorAll('button').forEach(button => {
+          button.disabled = true;
+          if (String(button.dataset.answer) === String(question.answer)) button.classList.add('selected');
+        });
+        if (lives <= 0) {
+          ctx.finish(false, `Gauntlet ended at round ${round}. Final score: ${score}.`, { score });
+        } else if (round === totalRounds) {
+          ctx.finish(true, `Gauntlet cleared. ${score} points with a final combo of ${combo}×.`, { score });
+        } else {
+          round++;
+          ctx.later(showRound, 650);
+        }
+      };
+      options.querySelectorAll('button').forEach(button => button.addEventListener('click', () => resolve(button.dataset.answer)));
+      ctx.later(() => {
+        if (!answered && !ctx.isDone()) resolve('__timeout__');
+      }, Math.max(7000, 13000 - round * 800));
+    };
+    showRound();
+  }
+
   function render(id, ctx) {
     resetMessage(ctx);
+    if (id === 'gauntlet') return logicGauntlet(ctx);
+    if (id === 'neural') return neuralSequence(ctx);
+    if (id === 'cipher') return cipherVault(ctx);
     if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
     if (id === 'balance') return balance(ctx);
     if (id === 'code') return codeBreaker(ctx);

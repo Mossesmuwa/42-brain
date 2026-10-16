@@ -12,14 +12,12 @@ const ACHIEVEMENTS = [
   { id: 'math_whiz',       name: 'Math Whiz',              desc: '5 mental math puzzles correct in a row',              icon: '🔢', tier: 'silver' },
   { id: 'streak_5',        name: 'On Fire!',               desc: 'Achieve a streak of 5',                               icon: 'bolt', tier: 'bronze' },
   { id: 'streak_10',       name: 'Unstoppable',            desc: 'Achieve a streak of 10',                              icon: '🌟', tier: 'gold'   },
-  { id: 'hard_mode',       name: 'Glutton for Punishment', desc: 'Finish a session on Hard difficulty',                 icon: '💀', tier: 'silver' },
+  { id: 'hard_mode',       name: 'Challenge Accepted', desc: 'Finish a session on Hard difficulty',                 icon: '💀', tier: 'silver' },
   { id: 'daily_1',         name: 'Daily Devotee',          desc: 'Complete your first daily challenge',                 icon: 'calendar', tier: 'bronze' },
   { id: 'daily_3',         name: 'Consistent',             desc: '3-day daily challenge streak',                        icon: '📆', tier: 'silver' },
   { id: 'daily_7',         name: 'Weekly Warrior',         desc: '7-day daily challenge streak',                        icon: '🏅', tier: 'gold'   },
   { id: 'reaction_king',   name: 'Reaction King',          desc: 'Single reaction time under 250ms',                    icon: '👑', tier: 'gold'   },
   { id: 'veteran',         name: 'Veteran',                desc: 'Complete 10 game sessions',                           icon: '🎖️', tier: 'gold'   },
-  { id: 'night_owl',       name: 'Night Owl',              desc: 'Play between midnight and 4am',                       icon: '🦉', tier: 'bronze' },
-  { id: 'early_bird',      name: 'Early Bird',             desc: 'Play before 7am',                                     icon: '🐦', tier: 'bronze' },
   { id: 'attention_ace',   name: 'Eagle Eye',              desc: 'Find all targets in an attention puzzle without error',icon: '🦅', tier: 'silver' },
   { id: 'custom_warrior',  name: 'Custom Warrior',         desc: 'Complete a custom-mode session',                      icon: 'settings', tier: 'bronze' },
   { id: 'arcade_first',    name: 'Arcade Initiate',         desc: 'Complete your first Brain Arcade challenge',          icon: 'brain', tier: 'bronze' },
@@ -35,7 +33,6 @@ const AchievementSystem = {
   check(sessionData, G) {
     const newly = [];
     const stats = Store.getStats();
-    const hour  = new Date().getHours();
 
     const _try = id => { if (Store.unlockAchievement(id)) { const d = ACHIEVEMENTS.find(a => a.id === id); if (d) newly.push(d); } };
 
@@ -50,8 +47,6 @@ const AchievementSystem = {
     if ((sessionData.bestStreak    || 0) >= 10)                              _try('streak_10');
     if (G.difficulty === 'hard'    && (sessionData.total || 0) >= 5)         _try('hard_mode');
     if (stats.totalGames           >= 10)                                    _try('veteran');
-    if (hour >= 0  && hour < 4)                                              _try('night_owl');
-    if (hour >= 5  && hour < 7)                                              _try('early_bird');
     if (sessionData.attentionAce)                                            _try('attention_ace');
     if (G.mode === 'custom')                                                 _try('custom_warrior');
 
