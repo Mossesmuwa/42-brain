@@ -632,3 +632,10 @@ button:focus-visible { outline:3px solid var(--orange); outline-offset:2px; }
 }
 #lgOptions button { min-height: 48px; text-align: left; }
 #lgOptions button.selected { border-color: var(--accent); background: var(--accent-light); }
+
+.progressive-memory { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 480px; margin: 18px auto; gap: 8px; }
+.progressive-memory button { min-height: 58px; aspect-ratio: 1; border: 1px solid var(--border); border-radius: 12px; background: linear-gradient(145deg, var(--surface), var(--surface2)); color: var(--text); font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 800; transition: transform .15s ease, background .15s ease; }
+.progressive-memory button:not(:disabled):hover { transform: translateY(-2px); }
+.progressive-memory button.matched { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.progressive-memory button.revealed:not(.matched) { background: var(--accent-light); border-color: var(--accent); }
+@media (max-width: 420px) { .progressive-memory { gap: 6px; } .progressive-memory button { min-height: 48px; border-radius: 8px; } }
