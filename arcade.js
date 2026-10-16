@@ -7,6 +7,7 @@
   const progressKey = '42brain-arcade-progress';
   let progress;
   let currentId = null;
+  let dailySession = false;
   let modal = null;
   let modalTimers = [];
   let previousFocus = null;
@@ -102,13 +103,38 @@
     if (page === 'home' || page === 'train') renderWorkspaceHome();
   }
 
+  function localDayKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  function dailyGame() {
+    if (!catalog.length) return null;
+    const seed = Number(localDayKey().replaceAll('-', ''));
+    return catalog[seed % catalog.length];
+  }
+  function dailyRecords() {
+    try { return JSON.parse(localStorage.getItem('42brain-daily-records') || '{}'); }
+    catch (_) { return {}; }
+  }
+  function dailyStreak(records) {
+    let cursor = new Date();
+    if (!records[localDayKey(cursor)]?.success) cursor.setDate(cursor.getDate() - 1);
+    let streak = 0;
+    while (records[localDayKey(cursor)]?.success) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
   function renderDailyPage() {
-    const d=window.Store?Store.getDailyData():{streak:0,completed:{},history:[]};
-    const today=window.Store?Store.todayKey():new Date().toISOString().slice(0,10);
-    const date=$('workspaceDailyDate'), best=$('workspaceDailyBest'), streak=$('workspaceDailyStreak'), runs=$('workspaceDailyRuns'), btn=$('workspaceDailyStart');
-    if(date) date.textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
-    if(best) best.textContent=d.completed?.[today] ?? '—'; if(streak) streak.textContent=d.streak||0; if(runs) runs.textContent=Object.keys(d.completed||{}).length;
-    if(btn){btn.disabled=!!d.completed?.[today];btn.textContent=btn.disabled?'Completed today':"Start today's challenge →";}
+    const today = localDayKey();
+    const records = dailyRecords();
+    const game = dailyGame();
+    const date = $('workspaceDailyDate'), best = $('workspaceDailyBest'), streak = $('workspaceDailyStreak'), runs = $('workspaceDailyRuns'), btn = $('workspaceDailyStart');
+    if (date) date.textContent = game ? `${game.title} · ${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}` : 'No challenge available';
+    if (best) best.textContent = records[today]?.success ? 'Complete' : '—';
+    if (streak) streak.textContent = dailyStreak(records);
+    if (runs) runs.textContent = Object.values(records).filter(item => item?.success).length;
+    if (btn) { btn.disabled = !game || !!records[today]?.success; btn.textContent = btn.disabled ? 'Completed today' : "Play today's game →"; }
   }
   function renderWorkspaceHome() {
     const stats=window.Store?Store.getStats():{categoryAnswered:{},categoryCorrect:{},totalGames:0}; const cats=['logic','memory','math','attention']; const labels={logic:'Logic',memory:'Memory',math:'Math',attention:'Focus'};
@@ -130,10 +156,11 @@
 
   function bestFor(id) { return Number(localStorage.getItem(`42brain-best-${id}`) || 0); }
 
-  function openGame(id) {
+  function openGame(id, isDaily = false) {
     const game = catalog.find(item => item.id === id);
     if (!game || !window.ArcadeGames) return;
     currentId = id;
+    dailySession = isDaily;
     previousFocus = document.activeElement;
     modalTimers.forEach(clearTimeout);
     modalTimers = [];
@@ -232,6 +259,14 @@
           $('arcadeBest').textContent = `${best} pts`;
         }
         saveProgress();
+        if (success && dailySession) {
+          const today = localDayKey();
+          const records = dailyRecords();
+          records[today] = { success: true, gameId: currentId, completedAt: new Date().toISOString() };
+          localStorage.setItem('42brain-daily-records', JSON.stringify(records));
+          dailySession = false;
+          renderDailyPage();
+        }
       }
     };
     window.ArcadeGames.render(currentId, context);
@@ -247,11 +282,11 @@
     }));
     $('workspaceLaunch').addEventListener('click', () => showWorkspace('home'));
     $('workspaceRecommendationBtn')?.addEventListener('click', () => document.getElementById('planBtn')?.click());
-    $('workspaceDailyStart')?.addEventListener('click', () => document.getElementById('dailyBtn')?.click());
+    $('workspaceDailyStart')?.addEventListener('click', () => { const game = dailyGame(); if (game) openGame(game.id, true); });
     $('workspacePlan')?.addEventListener('click', () => document.getElementById('planBtn')?.click());
     $('workspaceExam')?.addEventListener('click', () => document.getElementById('examBtn')?.click());
-    $('workspaceBack').addEventListener('click', showSplash);
-    $('workspaceClassic').addEventListener('click', showSplash);
+    $('workspaceBack')?.addEventListener('click', () => setPage('home'));
+    $('workspaceClassic')?.addEventListener('click', () => setPage('arcade'));
     $('arcadeHelp').addEventListener('click', () => $('arcadeHelpPanel').classList.toggle('hidden'));
     $('workspaceReset').addEventListener('click', () => {
       progress = { score: 0, wins: 0, plays: 0, completed: {}, gameStats: {} };
@@ -275,5 +310,6 @@
     document.querySelectorAll('.game-catalog').forEach(node => renderCards(node, node.dataset.filter));
     bindWorkspace();
     renderProgress();
+    showWorkspace('home');
   });
 }());
