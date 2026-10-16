@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View,
 } from 'react-native';
-import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
+import type { SQLiteDatabase } from 'expo-sqlite';
 
 type Screen = 'home' | 'train' | 'progress' | 'settings' | 'game' | 'result';
 type GameMode = 'logic' | 'math' | 'memory' | 'focus' | 'daily';
