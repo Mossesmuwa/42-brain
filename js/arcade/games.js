@@ -159,6 +159,7 @@
     }
     button.addEventListener('click', () => {
       if (!active || ctx.isDone()) return;
+      if (signal.dataset.responded) return;
       if (!shouldRespond) {
         falseAlarms += 1;
         signal.dataset.responded = 'false-alarm';
