@@ -257,7 +257,8 @@
     $('workspacePlan')?.addEventListener('click', () => document.getElementById('planBtn')?.click());
     $('workspaceExam')?.addEventListener('click', () => document.getElementById('examBtn')?.click());
     $('workspaceBack').addEventListener('click', showSplash);
-    $('workspaceClassic').addEventListener('click', showSplash);
+    $('workspaceClassic').addEventListener('click', () => $('startBtn')?.click());
+    $('workspaceHeroTrain')?.addEventListener('click', () => $('startBtn')?.click());
     $('arcadeHelp').addEventListener('click', () => $('arcadeHelpPanel').classList.toggle('hidden'));
     $('workspaceReset').addEventListener('click', () => {
       progress = { score: 0, wins: 0, plays: 0, completed: {}, gameStats: {} };
@@ -280,6 +281,8 @@
     loadProgress();
     document.querySelectorAll('.game-catalog').forEach(node => renderCards(node, node.dataset.filter));
     bindWorkspace();
+    setPage('home');
+    renderWorkspaceHome();
     renderProgress();
   });
 }());
