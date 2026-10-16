@@ -213,7 +213,8 @@
         progress.gameStats[currentId].plays += 1;
         if (success) {
           progress.gameStats[currentId].wins += 1;
-          const earnedScore = Math.max(10, Math.min(1000, Number(details.score) || 10));\n          progress.score += earnedScore;
+          const earnedScore = Math.max(10, Math.min(1000, Number(details.score) || 10));
+          progress.score += earnedScore;
           progress.completed[currentId] = true;
           const arcadeWins = Object.values(progress.gameStats).reduce((sum, item) => sum + Number(item.wins || 0), 0);
           if (window.Store) {
