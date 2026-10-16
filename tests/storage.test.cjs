@@ -35,6 +35,14 @@ test('daily completion increments only for the previous local calendar day', () 
   assert.equal(Store.completedToday(), true);
 });
 
+test('replaying today keeps the streak and retains the best daily score', () => {
+  const { Store } = makeStore();
+  Store.markDailyComplete(40);
+  assert.equal(Store.markDailyComplete(20), 1);
+  assert.equal(Store.getDailyData().completed[Store.todayKey()], 40);
+  assert.equal(Store.getDailyData().history.length, 1);
+});
+
 test('backup import restores arcade, custom puzzles and score tables', () => {
   const { Store } = makeStore();
   const payload = {
