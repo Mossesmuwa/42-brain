@@ -301,18 +301,62 @@
   }
 
   function cardMemory(ctx) {
-    const symbols=['▲','●','■','◆'];
-    const cards=shuffled([...symbols,...symbols]); let first=null, locked=false, matches=0;
-    ctx.board.innerHTML=`<p class="game-instruction">Find all matching pairs.</p><div class="memory-cards">${cards.map((_,i)=>`<button type="button" data-card="${i}" aria-label="Hidden card ${i+1}">?</button>`).join('')}</div>`;
-    const buttons=[...ctx.board.querySelectorAll('[data-card]')];
-    buttons.forEach((b,i)=>b.addEventListener('click',()=>{
-      if(locked||ctx.isDone()||b.classList.contains('matched')||b===first)return;
-      b.textContent=cards[i]; b.classList.add('revealed');
-      if(first===null){first=b;return;}
-      const j=Number(first.dataset.card);
-      if(cards[j]===cards[i]){first.classList.add('matched');b.classList.add('matched');matches++;first=null;if(matches===symbols.length)ctx.finish(true,'All pairs found.');}
-      else {locked=true;ctx.later(()=>{first.textContent='?';b.textContent='?';first.classList.remove('revealed');b.classList.remove('revealed');first=null;locked=false;},650);}
-    }));
+    const rounds = [4, 6, 8];
+    const symbols = ['▲', '●', '■', '◆', '✦', '⬟', '☾', '✚'];
+    let round = 0, score = 0, moves = 0, first = null, locked = false, matches = 0;
+    const buildRound = () => {
+      const pairCount = rounds[round];
+      const cards = shuffled(symbols.slice(0, pairCount).concat(symbols.slice(0, pairCount)));
+      first = null; locked = false; matches = 0; moves = 0;
+      ctx.board.innerHTML = `
+        <div class="game-instruction">Find every matching pair. The board expands each round. Fewer flips earn more points.</div>
+        <div class="game-status"><span>ROUND <b>${round + 1} / ${rounds.length}</b></span><span>PAIRS <b>0 / ${pairCount}</b></span><span>POINTS <b id="cmScore">${score}</b></span></div>
+        <div class="memory-cards progressive-memory" style="--card-count:${pairCount * 2}">${cards.map((_, i) => `<button type="button" data-card="${i}" aria-label="Hidden card ${i + 1}">?</button>`).join('')}</div>
+        <p id="cmFeedback" class="game-instruction" aria-live="polite">Memorise the board. Find a pair to begin.</p>`;
+      const buttons = [...ctx.board.querySelectorAll('[data-card]')];
+      const feedback = ctx.board.querySelector('#cmFeedback');
+      buttons.forEach((button, index) => button.addEventListener('click', () => {
+        if (locked || ctx.isDone() || button.classList.contains('matched') || button === first) return;
+        button.textContent = cards[index];
+        button.classList.add('revealed');
+        if (!first) { first = button; return; }
+        moves++;
+        const firstIndex = Number(first.dataset.card);
+        if (cards[firstIndex] === cards[index]) {
+          first.classList.add('matched'); button.classList.add('matched');
+          first.disabled = true; button.disabled = true;
+          first = null; matches++;
+          score += Math.max(5, 18 - Math.floor(moves / 2));
+          ctx.board.querySelector('#cmScore').textContent = score;
+          ctx.board.querySelector('.game-status span:nth-child(2) b').textContent = `${matches} / ${pairCount}`;
+          feedback.textContent = 'Match found. Keep going.';
+          if (matches === pairCount) {
+            score += Math.max(0, 40 - moves * 2);
+            if (round === rounds.length - 1) {
+              ctx.finish(true, `Memory master. All three boards cleared in ${moves} flips on the final board — ${score} points.`, { score });
+            } else {
+              round++;
+              feedback.textContent = 'Board cleared. Next round adds more pairs.';
+              const next = document.createElement('button');
+              next.type = 'button'; next.className = 'cta-btn'; next.textContent = 'Next memory board';
+              next.addEventListener('click', buildRound);
+              ctx.board.appendChild(next);
+            }
+          }
+        } else {
+          locked = true;
+          feedback.textContent = 'No match. Remember both symbols before they turn over.';
+          const previous = first;
+          ctx.later(() => {
+            if (ctx.isDone()) return;
+            previous.textContent = '?'; button.textContent = '?';
+            previous.classList.remove('revealed'); button.classList.remove('revealed');
+            first = null; locked = false;
+          }, 700);
+        }
+      }));
+    };
+    buildRound();
   }
 
   function delayedRecall(ctx) {
