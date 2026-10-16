@@ -385,9 +385,156 @@
   function scheduleBuilder(ctx) { choiceGame(ctx,'A task takes 2 hours and must happen before its dependent review. Which slot is valid?',['09:00–11:00','11:00–13:00','13:00–15:00','15:00–17:00'],0,'Dependency respected.'); }
   function riskReward(ctx) { choiceGame(ctx,'You have a risk budget of 5. Which plan stays inside it while maximising reward?',['Reward 8 / Risk 7','Reward 6 / Risk 5','Reward 5 / Risk 6','Reward 4 / Risk 8'],1,'Best reward within the risk budget.'); }
 
+
+  /* Multi-round flagship game: the sequence grows every round and includes limited lives. */
+  function neuralSequence(ctx) {
+    const size = 4;
+    const totalRounds = 5;
+    let round = 1, lives = 2, score = 0, sequence = [], inputIndex = 0, locked = true;
+    const makeSequence = length => {
+      const result = [];
+      while (result.length < length) {
+        const next = Math.floor(Math.random() * size * size);
+        if (result[result.length - 1] !== next) result.push(next);
+      }
+      return result;
+    };
+    ctx.board.innerHTML = `
+      <div class="game-instruction">Watch the signal, then replay it in the exact order. Every round adds one step.</div>
+      <div class="game-status"><span>ROUND <b id="nsRound">1 / ${totalRounds}</b></span><span>POINTS <b id="nsScore">0</b></span><span>ERRORS <b id="nsLives">2</b></span></div>
+      <div class="play-grid neural-sequence" style="--size:4" role="grid">${range(16).map(i => `<button type="button" data-signal="${i}" aria-label="Signal cell ${i + 1}"></button>`).join('')}</div>
+      <div class="game-instruction" id="nsHint" aria-live="polite">Get ready…</div>
+      <button id="nsStart" type="button" class="cta-btn">Start sequence</button>`;
+    const cells = [...ctx.board.querySelectorAll('[data-signal]')];
+    const hint = ctx.board.querySelector('#nsHint');
+    const startButton = ctx.board.querySelector('#nsStart');
+    const flash = (cell, delay) => ctx.later(() => {
+      if (!ctx.isDone()) { cells[cell].classList.add('lit'); ctx.tone(300 + cell * 22); }
+      ctx.later(() => cells[cell].classList.remove('lit'), 210);
+    }, delay);
+    const beginRound = () => {
+      if (ctx.isDone()) return;
+      locked = true; inputIndex = 0;
+      cells.forEach(cell => { cell.disabled = true; cell.classList.remove('lit', 'picked', 'wrong'); });
+      sequence = makeSequence(round + 2);
+      ctx.board.querySelector('#nsRound').textContent = `${round} / ${totalRounds}`;
+      hint.textContent = 'Watch carefully…';
+      startButton.disabled = true;
+      sequence.forEach((cell, index) => flash(cell, 450 + index * 520));
+      ctx.later(() => {
+        if (ctx.isDone()) return;
+        locked = false;
+        cells.forEach(cell => { cell.disabled = false; });
+        hint.textContent = 'Your turn — repeat the signal.';
+        startButton.textContent = 'Replay round';
+        startButton.disabled = false;
+      }, 450 + sequence.length * 520);
+    };
+    startButton.addEventListener('click', () => {
+      if (!locked || ctx.isDone()) return;
+      beginRound();
+    });
+    cells.forEach((cell, index) => cell.addEventListener('click', () => {
+      if (locked || ctx.isDone()) return;
+      if (index !== sequence[inputIndex]) {
+        lives -= 1;
+        ctx.board.querySelector('#nsLives').textContent = lives;
+        cell.classList.add('wrong');
+        locked = true;
+        hint.textContent = lives ? 'Signal missed. One life lost — watch the sequence again.' : 'No lives left. Reset to take another run.';
+        if (!lives) {
+          ctx.finish(false, `Run ended at round ${round}. You scored ${score} points.`, { score });
+        } else {
+          startButton.textContent = 'Try round again';
+          startButton.disabled = false;
+        }
+        return;
+      }
+      cell.classList.add('picked');
+      score += 10 + round * 2;
+      ctx.board.querySelector('#nsScore').textContent = score;
+      inputIndex += 1;
+      if (inputIndex === sequence.length) {
+        locked = true;
+        score += 15;
+        ctx.board.querySelector('#nsScore').textContent = score;
+        if (round === totalRounds) {
+          ctx.finish(true, `Neural sequence mastered. Final score: ${score} points.`, { score });
+          return;
+        }
+        round += 1;
+        hint.textContent = 'Round cleared. The next sequence is longer.';
+        startButton.textContent = 'Begin next round';
+        startButton.disabled = false;
+      }
+    }));
+  }
+
+  /* Mastermind-style deduction: exact and misplaced digit feedback across 3 vaults. */
+  function cipherVault(ctx) {
+    const roundsTotal = 3;
+    let round = 1, attempts = 0, totalScore = 0, secret = [], solved = false;
+    const newCode = () => shuffled(range(10)).slice(0, 4);
+    const buildRound = () => {
+      secret = newCode(); attempts = 0; solved = false;
+      ctx.board.innerHTML = `
+        <div class="game-instruction">Crack the 4-digit vault code. Digits never repeat. Feedback tells you how many digits are correct and how many are in the wrong position.</div>
+        <div class="game-status"><span>VAULT <b id="cvRound">${round} / ${roundsTotal}</b></span><span>ATTEMPTS <b id="cvAttempts">0 / 7</b></span><span>SCORE <b id="cvScore">${totalScore}</b></span></div>
+        <form id="cvForm" class="cipher-form">
+          <label for="cvInput">Enter four unique digits</label>
+          <input id="cvInput" class="code-input" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="e.g. 4821" required>
+          <button class="cta-btn" type="submit">Check code</button>
+        </form>
+        <p id="cvFeedback" class="game-instruction" aria-live="polite">You have seven attempts per vault.</p>
+        <ol id="cvHistory" class="cipher-history" aria-label="Previous guesses"></ol>`;
+      const form = ctx.board.querySelector('#cvForm');
+      const input = ctx.board.querySelector('#cvInput');
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        if (ctx.isDone() || solved) return;
+        const guessText = input.value.trim();
+        if (!/^\d{4}$/.test(guessText) || new Set(guessText).size !== 4) {
+          ctx.board.querySelector('#cvFeedback').textContent = 'Enter exactly four different digits.';
+          return;
+        }
+        const guess = [...guessText].map(Number);
+        const exact = guess.filter((digit, i) => digit === secret[i]).length;
+        const misplaced = guess.filter((digit, i) => secret.includes(digit) && digit !== secret[i]).length;
+        attempts++;
+        ctx.board.querySelector('#cvAttempts').textContent = `${attempts} / 7`;
+        const row = document.createElement('li');
+        row.textContent = `${guessText} — ${exact} exact, ${misplaced} misplaced`;
+        ctx.board.querySelector('#cvHistory').prepend(row);
+        input.value = '';
+        if (exact === 4) {
+          solved = true;
+          const earned = Math.max(40, 140 - (attempts - 1) * 15);
+          totalScore += earned;
+          ctx.board.querySelector('#cvScore').textContent = totalScore;
+          if (round === roundsTotal) {
+            ctx.finish(true, `All three vaults opened. ${totalScore} points — ${attempts} attempts on the final vault.`, { score: totalScore });
+            return;
+          }
+          ctx.board.querySelector('#cvFeedback').textContent = `Vault opened: +${earned} points. Prepare for the next vault.`;
+          const next = document.createElement('button');
+          next.type = 'button'; next.className = 'cta-btn'; next.textContent = 'Enter next vault';
+          next.addEventListener('click', () => { round++; buildRound(); });
+          form.replaceWith(next);
+        } else if (attempts >= 7) {
+          ctx.finish(false, `Vault locked. You reached vault ${round} with ${totalScore} points. Reset to try again.`, { score: totalScore });
+        } else {
+          ctx.board.querySelector('#cvFeedback').textContent = `${exact} exact position(s), ${misplaced} correct digit(s) in another position.`;
+          input.focus();
+        }
+      });
+      input.focus();
+    };
+    buildRound();
+  }
+
   function render(id, ctx) {
     resetMessage(ctx);
-    if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
+    if (id === 'neural') return neuralSequence(ctx);\n    if (id === 'cipher') return cipherVault(ctx);\n    if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
     if (id === 'balance') return balance(ctx);
     if (id === 'code') return codeBreaker(ctx);
     if (id === 'circuit') return orderedButtons(ctx, [1, 2, 3, 4], 'Activate the nodes in numerical order.', 'Circuit powered.');
