@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View,
 } from 'react-native';
@@ -97,6 +97,7 @@ function AppShell() {
   const [correct, setCorrect] = useState(0);
   const [memoryHidden, setMemoryHidden] = useState(false);
   const [answerFeedback, setAnswerFeedback] = useState<{ correct: boolean; answer: string } | null>(null);
+  const answeredRef = useRef(false);
   const [stats, setStats] = useState<Stats>({ sessions: 0, totalScore: 0, bestScore: 0, dailyDone: false });
 
   const question = useMemo(() => makeQuestion(mode, round, seed), [mode, round, seed]);
@@ -119,7 +120,7 @@ function AppShell() {
   useEffect(() => { void refreshStats(); }, [refreshStats, screen]);
 
   const startGame = (nextMode: GameMode) => {
-    const daySeed = Number(todayKey().replaceAll('-', ''));
+    const daySeed = Number(todayKey().split('-').join(''));
     setMode(nextMode);
     setSeed(nextMode === 'daily' ? daySeed : Date.now());
     setRound(0);
@@ -127,11 +128,13 @@ function AppShell() {
     setCorrect(0);
     setMemoryHidden(false);
     setAnswerFeedback(null);
+    answeredRef.current = false;
     setScreen('game');
   };
 
   const answer = async (choice: string) => {
-    if (answerFeedback) return;
+    if (answeredRef.current || answerFeedback) return;
+    answeredRef.current = true;
     const isCorrect = choice === question.answer;
     const nextCorrect = correct + (isCorrect ? 1 : 0);
     const nextScore = score + (isCorrect ? 100 : 0);
@@ -154,13 +157,14 @@ function AppShell() {
 
   const continueRound = () => {
     setAnswerFeedback(null);
+    answeredRef.current = false;
     setRound(value => value + 1);
     setMemoryHidden(false);
   };
 
   const modeTitle = mode === 'daily' ? 'Daily challenge' : ({
     logic: 'Logic studio', math: 'Quick math', memory: 'Memory studio', focus: 'Focus arena',
-  } as Record<GameMode, string>)[mode];
+  } as Record<Exclude<GameMode, 'daily'>, string>)[mode];
 
   return (
     <SafeAreaView style={styles.safe}>
