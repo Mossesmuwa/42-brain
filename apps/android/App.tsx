@@ -169,7 +169,7 @@ function AppShell() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="light-content" />
       <View style={styles.app}>
         <View style={styles.topbar}>
           <Pressable style={styles.brand} onPress={() => setScreen('home')} accessibilityRole="button" accessibilityLabel="42 Brain home">
