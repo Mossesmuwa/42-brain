@@ -158,7 +158,7 @@ const Store = {
     const url  = URL.createObjectURL(blob);
     const a    = Object.assign(document.createElement('a'), { href: url, download: `42brain_${this.todayKey()}.json` });
     a.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
   backupData() {
