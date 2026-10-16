@@ -202,7 +202,7 @@
         } catch (_) { /* Audio is optional in offline and restricted browsers. */ }
       },
       isDone: () => message.dataset.done === 'true',
-      finish(success, text) {
+      finish(success, text, details = {}) {
         if (message.dataset.done === 'true') return;
         message.dataset.done = 'true';
         message.className = `game-message ${success ? 'success' : 'failure'}`;
@@ -213,7 +213,7 @@
         progress.gameStats[currentId].plays += 1;
         if (success) {
           progress.gameStats[currentId].wins += 1;
-          progress.score += 10;
+          const earnedScore = Math.max(10, Math.min(1000, Number(details.score) || 10));\n          progress.score += earnedScore;
           progress.completed[currentId] = true;
           const arcadeWins = Object.values(progress.gameStats).reduce((sum, item) => sum + Number(item.wins || 0), 0);
           if (window.Store) {
@@ -227,7 +227,7 @@
             if (['memory','focus','speed','strategy','math','technical','lab'].every(l => lanes.has(l))) Store.unlockAchievement('full_spectrum');
           }
           progress.wins = Object.keys(progress.completed).length;
-          const best = Math.max(10, bestFor(currentId));
+          const best = Math.max(earnedScore, bestFor(currentId));
           localStorage.setItem(`42brain-best-${currentId}`, String(best));
           $('arcadeBest').textContent = `${best} pts`;
         }
