@@ -61,10 +61,14 @@ function makeQuestion(mode: GameMode, round: number, seed: number): Question {
   if (mode === 'memory') {
     const digits = Array.from({ length: 4 }, () => String(1 + Math.floor(random() * 9)));
     const answer = digits.join(' · ');
-    const wrong = digits.map((digit, i) => String((Number(digit) % 9) + 1)).join(' · ');
-    const reversed = [...digits].reverse().join(' · ');
-    const shifted = [...digits.slice(1), digits[0]].join(' · ');
-    return { title: 'Remember the sequence', detail: answer, answer, options: shuffled([answer, wrong, reversed, shifted]) };
+      const alternatives = [[...digits].reverse().join(' · '), [...digits.slice(1), digits[0]].join(' · ')];
+    digits.forEach((digit, index) => {
+      const changed = [...digits];
+      changed[index] = String((Number(digit) % 9) + 1);
+      alternatives.push(changed.join(' · '));
+    });
+    const unique = [...new Set(alternatives.filter(value => value !== answer))].slice(0, 3);
+    return { title: 'Remember the sequence', detail: answer, answer, options: shuffled([answer, ...unique]) };
   }
   if (mode === 'focus') {
     return { title: 'Spot the different one', detail: 'Choose the symbol that does not match the others.', answer: '◆', options: shuffled(['●', '●', '◆', '●']) };
@@ -72,11 +76,14 @@ function makeQuestion(mode: GameMode, round: number, seed: number): Question {
   const step = 2 + Math.floor(random() * 5);
   const start = 1 + Math.floor(random() * 9);
   const answer = String(start + step * 4);
+  const candidates = [answer, String(Number(answer) + step), String(Number(answer) - 1), String(Number(answer) + 3), String(Number(answer) + 5), String(Number(answer) + 7)];
+  const uniqueOptions = [...new Set(candidates)].slice(0, 4);
+  while (uniqueOptions.length < 4) uniqueOptions.push(String(Number(answer) + 10 + uniqueOptions.length));
   return {
     title: 'Complete the pattern',
     detail: `${start}   ${start + step}   ${start + step * 2}   ${start + step * 3}   ?`,
     answer,
-    options: shuffled([answer, String(Number(answer) + step), String(Number(answer) - 1), String(Number(answer) + 3)]),
+    options: shuffled(uniqueOptions),
   };
 }
 
@@ -89,7 +96,7 @@ function AppShell() {
   const [score, setScore] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [memoryHidden, setMemoryHidden] = useState(false);
-  const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
+  const [answerFeedback, setAnswerFeedback] = useState<{ correct: boolean; answer: string } | null>(null);
   const [stats, setStats] = useState<Stats>({ sessions: 0, totalScore: 0, bestScore: 0, dailyDone: false });
 
   const question = useMemo(() => makeQuestion(mode, round, seed), [mode, round, seed]);
@@ -119,15 +126,16 @@ function AppShell() {
     setScore(0);
     setCorrect(0);
     setMemoryHidden(false);
-    setLastAnswerCorrect(null);
+    setAnswerFeedback(null);
     setScreen('game');
   };
 
   const answer = async (choice: string) => {
+    if (answerFeedback) return;
     const isCorrect = choice === question.answer;
     const nextCorrect = correct + (isCorrect ? 1 : 0);
     const nextScore = score + (isCorrect ? 100 : 0);
-    setLastAnswerCorrect(isCorrect);
+    setAnswerFeedback({ correct: isCorrect, answer: question.answer });
     setCorrect(nextCorrect);
     setScore(nextScore);
 
@@ -141,6 +149,11 @@ function AppShell() {
       await refreshStats();
       return;
     }
+    // Wait for an explicit Continue action so the answer feedback is readable.
+  };
+
+  const continueRound = () => {
+    setAnswerFeedback(null);
     setRound(value => value + 1);
     setMemoryHidden(false);
   };
@@ -245,13 +258,18 @@ function AppShell() {
                 <>
                   <Text style={styles.questionDetail}>{mode === 'memory' ? 'Choose the sequence you saw.' : question.detail}</Text>
                   <View style={styles.options}>
-                    {question.options.map((option, index) => (
+                    {answerFeedback ? (
+                      <View style={styles.feedbackPanel}>
+                        <Text style={[styles.feedbackTitle, { color: answerFeedback.correct ? C.good : C.bad }]}>{answerFeedback.correct ? 'Correct' : 'Not quite'}</Text>
+                        <Text style={styles.bodySmall}>{answerFeedback.correct ? 'Good reasoning. Ready for the next round?' : `The correct answer was ${answerFeedback.answer}. Every round is a chance to learn.`}</Text>
+                        <Action label="Continue" onPress={continueRound} />
+                      </View>
+                    ) : question.options.map((option, index) => (
                       <Pressable key={`${round}-${index}-${option}`} style={styles.option} onPress={() => void answer(option)} accessibilityRole="button">
                         <Text style={styles.optionIndex}>{String.fromCharCode(65 + index)}</Text><Text style={styles.optionText}>{option}</Text><Text style={styles.optionArrow}>↗</Text>
                       </Pressable>
                     ))}
                   </View>
-                  {lastAnswerCorrect !== null && <Text style={[styles.feedback, { color: lastAnswerCorrect ? C.good : C.bad }]}>{lastAnswerCorrect ? 'Correct. Keep going.' : 'Not quite. Keep learning from the next one.'}</Text>}
                 </>
               )}
             </View>
@@ -371,7 +389,8 @@ const styles = StyleSheet.create({
   optionIndex: { color: C.faint, fontSize: 10, fontWeight: '800', width: 18 },
   optionText: { color: C.text, fontSize: 15, fontWeight: '700', flex: 1 },
   optionArrow: { color: C.faint, fontSize: 15 },
-  feedback: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  feedbackPanel: { padding: 15, borderRadius: 14, backgroundColor: C.panel2, gap: 9 },
+  feedbackTitle: { fontSize: 15, fontWeight: '800' },
   sessionScore: { color: C.text, fontSize: 28, fontWeight: '900', textAlign: 'center' },
   sessionScoreLabel: { color: C.faint, fontSize: 9, letterSpacing: 1.3 },
   resultCard: { padding: 24, borderRadius: 22, backgroundColor: C.panel, borderWidth: 1, borderColor: C.border, gap: 9 },
