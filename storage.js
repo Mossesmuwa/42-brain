@@ -170,12 +170,12 @@ const Store = {
     return true;
   },
   validateImport(payload) {
-    return !!(payload && typeof payload === 'object' && payload.stats && typeof payload.stats === 'object' &&
-      payload.settings && typeof payload.settings === 'object' &&
+    return !!(payload && typeof payload === 'object' && !Array.isArray(payload) && payload.stats && typeof payload.stats === 'object' && !Array.isArray(payload.stats) &&
+      payload.settings && typeof payload.settings === 'object' && !Array.isArray(payload.settings) &&
       (!payload.stats.mistakes || Array.isArray(payload.stats.mistakes)) &&
       (!payload.stats.sessions || Array.isArray(payload.stats.sessions)) &&
-      (!payload.highScores || typeof payload.highScores === 'object') &&
-      (!payload.arcade || typeof payload.arcade === 'object'));
+      (!payload.highScores || (typeof payload.highScores === 'object' && !Array.isArray(payload.highScores))) &&
+      (!payload.arcade || (typeof payload.arcade === 'object' && !Array.isArray(payload.arcade))));
   },
   markMistakeMastered(index) {
     const stats=this.getStats();
