@@ -8,8 +8,9 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="premium.css" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#2563eb" />
+  <meta name="theme-color" content="#171a16" />
 </head>
 <body>
   <a class="skip-link" href="#puzzleArea">Skip to puzzle</a>
@@ -34,7 +35,7 @@
         <section class="home-hero" aria-labelledby="homeTitle">
           <div class="home-hero-copy">
             <span class="eyebrow">Your cognitive workspace</span>
-            <h1 id="homeTitle">A sharper mind,<br><em>one session at a time.</em></h1>
+            <h1 id="homeTitle">Make room for<br><em>a sharper mind.</em></h1>
             <p>Build logic, memory, focus and planning through short challenges that fit your day. Your progress stays on this device.</p>
             <div class="home-hero-actions">
               <button id="workspaceLaunch" class="cta-btn"><svg class="ui-icon"><use href="ui-icons.svg#bolt"/></svg> Open your workspace</button>
@@ -55,7 +56,7 @@
           <div class="command-heading"><div><span class="eyebrow">Pick your pace</span><h2>What are you training for?</h2></div><span class="command-status"><i></i> Ready when you are</span></div>
           <div class="command-grid">
             <button id="dailyBtn" class="command-card command-feature"><span class="command-icon"><svg class="ui-icon"><use href="ui-icons.svg#calendar"/></svg></span><span><strong>Daily challenge</strong><small>A fresh mixed workout, every day</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
-            <button class="command-card" data-page="arcade"><span class="command-icon purple"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span><strong>Brain Arcade</strong><small>47 tactile games to explore</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
+            <button class="command-card" data-page="arcade"><span class="command-icon purple"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span><strong>Brain Arcade</strong><small>A library of focused challenges</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
             <button class="command-card" data-page="progress"><span class="command-icon green"><svg class="ui-icon"><use href="ui-icons.svg#chart"/></svg></span><span><strong>See your progress</strong><small>Review patterns and improvements</small></span><svg class="ui-icon command-arrow"><use href="ui-icons.svg#arrow"/></svg></button>
           </div>
         </section>
@@ -81,6 +82,24 @@
         <div class="creator-avatar-wrap"><img src="creator-avatar.png" alt="MM creator avatar" class="creator-avatar" /></div>
         <div class="creator-copy"><span class="eyebrow">Built with curiosity</span><h2 id="creatorTitle">Designed by MM</h2><p>42 Brain is an offline-first cognitive training space created to make deliberate practice feel clear, useful and enjoyable.</p><div class="creator-links"><a href="https://github.com/Mossesmuwa" target="_blank" rel="noreferrer"><svg class="ui-icon"><use href="ui-icons.svg#share"/></svg> GitHub</a><a href="https://mossesmuwa.github.io/" target="_blank" rel="noreferrer"><svg class="ui-icon"><use href="ui-icons.svg#book"/></svg> Portfolio</a><a href="mailto:mossesmuwa@proton.me"><svg class="ui-icon"><use href="ui-icons.svg#users"/></svg> Contact MM</a></div></div>
         <div class="creator-cta"><span>Have an idea or project?</span><a class="sec-btn" href="mailto:mossesmuwa@proton.me">Get in touch <svg class="ui-icon"><use href="ui-icons.svg#arrow"/></svg></a></div>
+      </section>
+
+      <section class="support-coffee" aria-labelledby="supportCoffeeTitle">
+        <div class="support-coffee-art" aria-hidden="true">
+          <span class="coffee-orbit coffee-orbit-one"></span><span class="coffee-orbit coffee-orbit-two"></span>
+          <span class="coffee-cup"><svg viewBox="0 0 64 64" role="presentation"><path d="M13 23h33v17a12 12 0 0 1-12 12h-9A12 12 0 0 1 13 40V23Z"/><path d="M46 27h5a7 7 0 0 1 0 14h-6M21 13c-4-4 4-6 0-10M32 13c-4-4 4-6 0-10"/></svg></span>
+        </div>
+        <div class="support-coffee-copy">
+          <span class="eyebrow">Independent project · Made with care</span>
+          <h2 id="supportCoffeeTitle">Help keep good practice <em>within reach.</em></h2>
+          <p>42 Brain is built to make focused, thoughtful games available to everyone. If it has helped you, a small coffee is one way to support new games, accessibility and ongoing improvements.</p>
+          <ul class="support-promises"><li>Keep the core games free</li><li>Build more original challenges</li><li>Improve the experience on every device</li></ul>
+          <div class="support-coffee-actions">
+            <a id="coffeeSupportBtn" class="coffee-btn" href="#supportCoffeeTitle" aria-describedby="coffeeSupportNote"><span class="coffee-button-icon" aria-hidden="true">☕</span> Buy me a coffee <svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#arrow"/></svg></a>
+            <span id="coffeeSupportNote" class="coffee-note">Completely optional. Play and progress never depend on donations.</span>
+          </div>
+        </div>
+        <div class="support-coffee-foot"><span class="support-heart" aria-hidden="true">✳</span><span>Support the work, not a paywall.</span></div>
       </section>
 
       <nav class="premium-nav" aria-label="Training navigation">
@@ -115,7 +134,7 @@
             <span class="eyebrow">Choose your workout</span>
             <h2 id="gameLabTitle">Game Lab</h2>
           </div>
-          <span class="live-pill"><i></i> 47 games</span>
+          <span class="live-pill"><i></i> Explore the library</span>
         </div>
         <div class="game-grid">
           <button class="game-card game-card-blue" data-game="logic">
