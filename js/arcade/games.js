@@ -534,7 +534,8 @@
 
   function render(id, ctx) {
     resetMessage(ctx);
-    if (id === 'neural') return neuralSequence(ctx);\n    if (id === 'cipher') return cipherVault(ctx);\n    if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
+    if (id === 'neural') return neuralSequence(ctx);
+    if (id === 'cipher') return cipherVault(ctx);\n    if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
     if (id === 'balance') return balance(ctx);
     if (id === 'code') return codeBreaker(ctx);
     if (id === 'circuit') return orderedButtons(ctx, [1, 2, 3, 4], 'Activate the nodes in numerical order.', 'Circuit powered.');
