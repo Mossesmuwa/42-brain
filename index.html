@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="42 Brain — Logic and memory trainer inspired by 42-school entrance tests. Train your cognitive skills offline." />
-  <title>42 Brain — Logic & Memory Trainer</title>
+  <meta name="description" content="42 Brain is a private, offline-first cognitive training app for logic, memory, focus, strategy and problem-solving." />
+  <title>42 Brain — Your Cognitive Training Workspace</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
   <link rel="stylesheet" href="style.css" />
@@ -16,7 +16,7 @@
   <a class="skip-link" href="#puzzleArea">Skip to puzzle</a>
 
   <!-- ── SPLASH SCREEN ─────────────────────────────────────────── -->
-  <div id="splash" class="screen active">
+  <div id="splash" class="screen">
     <div class="splash-bg"></div>
     <div class="splash-content">
       <header class="home-topbar">
@@ -405,10 +405,10 @@
     </div>
   </div>
     <!-- Expanded training workspace. This is deliberately vanilla and works offline. -->
-    <div id="workspace" class="workspace screen" aria-label="42 Brain workspace">
+    <div id="workspace" class="workspace screen active" aria-label="42 Brain workspace">
       <header class="workspace-header">
         <button class="workspace-brand" data-page="home"><img src="icon.svg" alt=""> <span>42 Brain</span></button>
-        <button id="workspaceBack" class="sec-btn workspace-back">← Back to classic trainer</button>
+        <div class="workspace-header-actions"><span class="workspace-private"><i></i> Private by default</span><button class="sec-btn workspace-header-action" data-page="progress">Your progress</button><button class="sec-btn workspace-header-action" data-page="settings">Settings</button><button id="workspaceBack" class="sec-btn workspace-back hidden" tabindex="-1" aria-hidden="true">Classic trainer</button></div>
       </header>
       <div class="workspace-shell">
         <nav class="workspace-nav" aria-label="Main sections">
@@ -429,13 +429,13 @@
         <main class="workspace-main">
           <div id="workspaceBreadcrumb" class="workspace-breadcrumb" aria-label="Current location"><span>Workspace</span><span aria-hidden="true">/</span><strong>Home</strong></div>
           <section data-workspace-page="home" class="workspace-page active">
-            <div class="workspace-hero"><span class="eyebrow">Cognitive training system</span><h1>Build a sharper mind.</h1><p>Short, tactile challenges for logic, memory, focus and planning. Every run is saved locally.</p><button class="cta-btn" data-page="arcade">Open Brain Arcade →</button></div>
-            <div class="workspace-cards"><article><b id="workspaceGameCount">50</b><span>playable challenges</span></article><article><b id="workspaceScore">0</b><span>arcade points</span></article><article><b id="workspaceStreak">0</b><span>day streak</span></article></div>
+            <div class="workspace-hero"><span class="eyebrow">YOUR PERSONAL TRAINING SPACE</span><h1>Think clearly.<br><em>Get better at hard things.</em></h1><p>A focused library of challenges for logic, memory, attention, strategy and computational thinking. Train in short sessions. Keep your progress on your device.</p><div class="workspace-hero-actions"><button class="cta-btn" data-page="arcade">Explore the games <span aria-hidden="true">↗</span></button><button class="sec-btn" id="workspaceHeroTrain">Start a quick session</button></div><div class="workspace-hero-foot"><span><i></i> Works offline</span><span>No account required</span><span>No public leaderboard</span></div></div>
+            <div class="workspace-cards"><article><b id="workspaceGameCount">50</b><span>playable challenges</span></article><article><b id="workspaceScore">0</b><span>arcade points</span></article><article><b id="workspaceStreak">0</b><span>days practised</span></article></div>
             <div class="workspace-recommendations">
-              <article class="recommend-card"><span class="eyebrow">Recommended now</span><h3 id="workspaceRecommendationTitle">Your next workout</h3><p id="workspaceRecommendationText">Complete a short session and 42 Brain will start learning which areas need more work.</p><button class="cta-btn" id="workspaceRecommendationBtn">Start recommendation →</button></article>
-              <article class="recommend-card"><span class="eyebrow">Training status</span><h3 id="workspaceStatusTitle">Build your profile</h3><p id="workspaceStatusText">Your performance profile will appear after a few sessions.</p><div class="mini-progress"><i id="workspaceStatusBar"></i></div></article>
+              <article class="recommend-card"><span class="eyebrow">YOUR NEXT STEP</span><h3 id="workspaceRecommendationTitle">Start with a short session</h3><p id="workspaceRecommendationText">Complete a few rounds to build a useful picture of your strengths and areas to practise.</p><button class="cta-btn" id="workspaceRecommendationBtn">Build my training plan →</button></article>
+              <article class="recommend-card"><span class="eyebrow">YOUR TRAINING PROFILE</span><h3 id="workspaceStatusTitle">Your progress, at your pace</h3><p id="workspaceStatusText">Your performance profile will appear after a few sessions.</p><div class="mini-progress"><i id="workspaceStatusBar"></i></div></article>
             </div>
-            <div class="section-heading"><div><span class="eyebrow">Choose a lane</span><h2>Train by intention</h2></div></div>
+            <div class="section-heading"><div><span class="eyebrow">EXPLORE THE TRAINING AREAS</span><h2>Choose what you want to strengthen</h2></div></div>
             <div class="lane-grid"><button data-page="memory"><b>Memory Studio</b><small>Encode, hold, reproduce</small></button><button data-page="focus"><b>Focus Arena</b><small>Filter signal from noise</small></button><button data-page="speed"><b>Speed Lab</b><small>React, compare, search</small></button><button data-page="strategy"><b>Strategy Room</b><small>Plan, route, allocate</small></button><button data-page="math"><b>Math Lab</b><small>Calculate under pressure</small></button><button data-page="technical"><b>Technical Lab</b><small>Algorithms, systems, debugging</small></button></div>
           </section>
           <section data-workspace-page="train" class="workspace-page"><span class="eyebrow">Adaptive training</span><h1>Train with intention.</h1><p>Choose a quick workout, build a plan around your weakest area, or run the full 42-question simulation.</p><div class="training-options"><article><span class="eyebrow">5–10 min</span><h3>Quick training</h3><p>Mixed adaptive rounds across the classic trainer.</p><button id="workspaceClassic" class="cta-btn">Start quick training →</button></article><article><span class="eyebrow">Weakness first</span><h3 id="workspacePlanTitle">Personal training plan</h3><p id="workspacePlanText">Build a focused session from your lowest-performing category.</p><button id="workspacePlan" class="sec-btn">Build my plan</button></article><article><span class="eyebrow">42 questions</span><h3>Exam simulation</h3><p>No hints, no pause, feedback after the run.</p><button id="workspaceExam" class="sec-btn">Start simulation</button></article></div></section>
