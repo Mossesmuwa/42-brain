@@ -409,7 +409,69 @@
     btn.onclick=()=>{if(!ready){ctx.finish(false,'Too early. Reset and wait for GO.');return;}const ms=Math.round(performance.now()-start);ctx.finish(true,`Reaction recorded: ${ms} ms.`);};
   }
 
-  function quickMath(ctx) { const a=3+Math.floor(Math.random()*12),b=2+Math.floor(Math.random()*9),op=pick(['+','−','×']);const ans=op==='+'?a+b:op==='−'?a-b:a*b;const opts=shuffled([ans,ans+pick([-3,-2,2,3]),ans+pick([-5,4]),ans+pick([-7,6])]);choiceGame(ctx,`Solve: <strong>${a} ${op} ${b} = ?</strong>`,opts,opts.indexOf(ans),'Correct calculation.'); }
+  function quickMath(ctx) {
+    const totalRounds = 10;
+    let round = 1, score = 0, combo = 0, misses = 0, resolved = false;
+    const question = () => {
+      const op = pick(['+', '−', '×']);
+      const a = op === '×' ? 2 + Math.floor(Math.random() * (4 + Math.floor(round / 2))) : 8 + Math.floor(Math.random() * (8 + round * 2));
+      const b = op === '×' ? 2 + Math.floor(Math.random() * 12) : 2 + Math.floor(Math.random() * (9 + round));
+      const answer = op === '+' ? a + b : op === '−' ? a - b : a * b;
+      const choices = new Set([answer]);
+      while (choices.size < 4) {
+        const offset = Math.max(3, Math.floor(Math.random() * (round + 4)));
+        choices.add(answer + (Math.random() < .5 ? -offset : offset));
+      }
+      return { prompt: `${a} ${op} ${b} = ?`, answer, options: shuffled([...choices]) };
+    };
+    ctx.board.innerHTML = `
+      <div class="game-instruction">Ten rapid calculations. Correct streaks boost your score. Three misses end the run.</div>
+      <div class="game-status"><span>ROUND <b id="qmRound">1 / ${totalRounds}</b></span><span>COMBO <b id="qmCombo">0×</b></span><span>SCORE <b id="qmScore">0</b></span><span>MISSES <b id="qmMisses">0 / 3</b></span></div>
+      <div id="qmQuestion" class="logic-question"></div>
+      <div id="qmOptions" class="choice-column"></div>
+      <p id="qmFeedback" class="game-instruction" aria-live="polite">Ready when you are.</p>`;
+    const showRound = () => {
+      if (ctx.isDone()) return;
+      resolved = false;
+      const q = question();
+      ctx.board.querySelector('#qmRound').textContent = `${round} / ${totalRounds}`;
+      ctx.board.querySelector('#qmQuestion').textContent = q.prompt;
+      ctx.board.querySelector('#qmFeedback').textContent = 'Answer quickly, but accurately.';
+      const options = ctx.board.querySelector('#qmOptions');
+      options.innerHTML = q.options.map(value => `<button type="button" data-value="${value}">${value}</button>`).join('');
+      const settle = value => {
+        if (resolved || ctx.isDone()) return;
+        resolved = true;
+        const correct = Number(value) === q.answer;
+        if (correct) {
+          combo++;
+          score += 10 + Math.min(30, combo * 4) + Math.max(0, 10 - round);
+          ctx.board.querySelector('#qmFeedback').textContent = combo > 1 ? `Correct — ${combo} in a row.` : 'Correct. Keep moving.';
+        } else {
+          combo = 0; misses++;
+          ctx.board.querySelector('#qmMisses').textContent = `${misses} / 3`;
+          ctx.board.querySelector('#qmFeedback').textContent = `Answer: ${q.answer}. Reset your focus for the next one.`;
+        }
+        ctx.board.querySelector('#qmScore').textContent = score;
+        ctx.board.querySelector('#qmCombo').textContent = `${combo}×`;
+        options.querySelectorAll('button').forEach(button => {
+          button.disabled = true;
+          if (Number(button.dataset.value) === q.answer) button.classList.add('selected');
+        });
+        if (misses >= 3) {
+          ctx.finish(false, `Calculation run ended at round ${round}. Score: ${score} points.`, { score });
+        } else if (round === totalRounds) {
+          ctx.finish(true, `Ten-round calculation run complete. Score: ${score} points, best combo: ${combo}×.`, { score });
+        } else {
+          round++;
+          ctx.later(showRound, 420);
+        }
+      };
+      options.querySelectorAll('button').forEach(button => button.addEventListener('click', () => settle(button.dataset.value)));
+      ctx.later(() => { if (!resolved && !ctx.isDone()) settle('__timeout__'); }, Math.max(4500, 9000 - round * 350));
+    };
+    showRound();
+  }
   function rapidCompare(ctx) { const a=10+Math.floor(Math.random()*90),b=10+Math.floor(Math.random()*90);const opts=['LEFT','RIGHT'];choiceGame(ctx,`${a} or ${b}: which value is larger?`,opts,a>b?0:1,'Fast comparison.'); }
   function visualSearch(ctx) { const target=pick(['◆','●','▲']);const values=range(20).map(()=>pick(['◇','○','△','■']));const pos=Math.floor(Math.random()*values.length);values[pos]=target;ctx.board.innerHTML=`<p class="game-instruction">Find the only <strong>${target}</strong>.</p><div class="target-field">${values.map((v,i)=>`<button type="button" data-i="${i}">${v}</button>`).join('')}</div>`;ctx.board.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>ctx.finish(Number(b.dataset.i)===pos,Number(b.dataset.i)===pos?'Match found.':'Wrong symbol.')); }
   function binaryLogic(ctx) { const n=5+Math.floor(Math.random()*26),bin=n.toString(2),opts=shuffled([n,n+1,n-1,n+4]);choiceGame(ctx,`What decimal number is <strong>${bin}<sub>2</sub></strong>?`,opts,opts.indexOf(n),'Binary converted correctly.'); }
