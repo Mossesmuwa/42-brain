@@ -34,3 +34,13 @@ jobs:
           test -s premium.css
           test -s manifest.webmanifest
           test -s product-enhancements.js
+
+      - name: Install native app dependencies
+        working-directory: apps/android
+        run: npm install --no-audit --no-fund
+      - name: Type-check Android app
+        working-directory: apps/android
+        run: npm run typecheck
+      - name: Export Android JavaScript bundle
+        working-directory: apps/android
+        run: npm run export
