@@ -104,11 +104,23 @@ const Store = {
     yesterday.setDate(yesterday.getDate() - 1);
     const pad = n => String(n).padStart(2, '0');
     const yest = `${yesterday.getFullYear()}-${pad(yesterday.getMonth() + 1)}-${pad(yesterday.getDate())}`;
-    data.streak = (data.lastDate === yest) ? data.streak + 1 : 1;
+    const alreadyCompletedToday = data.lastDate === today;
+    data.streak = alreadyCompletedToday ? Math.max(1, data.streak || 0) : (data.lastDate === yest ? (data.streak || 0) + 1 : 1);
     data.lastDate = today;
-    data.completed[today] = score;
+    data.completed = data.completed || {};
+    data.completed[today] = Math.max(Number(data.completed[today]) || 0, Number(score) || 0);
     data.history = data.history || [];
-    data.history.unshift({ date: today, score, streak: data.streak });
+    if (alreadyCompletedToday) {
+      const todayEntry = data.history.find(entry => entry.date === today);
+      if (todayEntry) {
+        todayEntry.score = data.completed[today];
+        todayEntry.streak = data.streak;
+      } else {
+        data.history.unshift({ date: today, score: data.completed[today], streak: data.streak });
+      }
+    } else {
+      data.history.unshift({ date: today, score: data.completed[today], streak: data.streak });
+    }
     data.history = data.history.slice(0, 90);
     this.set('daily', data);
     return data.streak;
