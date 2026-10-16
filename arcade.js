@@ -250,8 +250,8 @@
     $('workspaceDailyStart')?.addEventListener('click', () => document.getElementById('dailyBtn')?.click());
     $('workspacePlan')?.addEventListener('click', () => document.getElementById('planBtn')?.click());
     $('workspaceExam')?.addEventListener('click', () => document.getElementById('examBtn')?.click());
-    $('workspaceBack').addEventListener('click', showSplash);
-    $('workspaceClassic').addEventListener('click', showSplash);
+    $('workspaceBack')?.addEventListener('click', () => setPage('home'));
+    $('workspaceClassic')?.addEventListener('click', () => setPage('arcade'));
     $('arcadeHelp').addEventListener('click', () => $('arcadeHelpPanel').classList.toggle('hidden'));
     $('workspaceReset').addEventListener('click', () => {
       progress = { score: 0, wins: 0, plays: 0, completed: {}, gameStats: {} };
