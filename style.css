@@ -615,3 +615,20 @@ button:focus-visible { outline:3px solid var(--orange); outline-offset:2px; }
   .game-board > .game-status { gap: 6px; padding: 9px; }
   .cipher-form .code-input { font-size: 1.55rem; }
 }
+
+
+.logic-question {
+  margin: 20px 0 16px;
+  padding: clamp(18px, 4vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  color: var(--text);
+  font-size: clamp(1.05rem, 3.4vw, 1.5rem);
+  font-weight: 750;
+  line-height: 1.45;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+#lgOptions button { min-height: 48px; text-align: left; }
+#lgOptions button.selected { border-color: var(--accent); background: var(--accent-light); }
