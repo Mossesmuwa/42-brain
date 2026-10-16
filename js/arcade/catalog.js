@@ -29,7 +29,7 @@ window.ArcadeCatalog = [
   {
     id: 'changes',
     title: 'Change Detection',
-    lane: 'attention',
+    lane: 'focus',
     icon: 'scan-eye',
     objective: 'Compare two visual displays and identify the element that changed.',
     controls: 'Study the first display, then select the changed position in the second.',
@@ -39,7 +39,7 @@ window.ArcadeCatalog = [
   {
     id: 'gonogo',
     title: 'Signal Control',
-    lane: 'attention',
+    lane: 'focus',
     icon: 'target',
     objective: 'Respond to target signals while withholding responses to distractors.',
     controls: 'Respond only when the target rule is satisfied. Accuracy matters more than rushing.',
@@ -49,7 +49,7 @@ window.ArcadeCatalog = [
   {
     id: 'moving',
     title: 'Target Tracking',
-    lane: 'attention',
+    lane: 'focus',
     icon: 'scan',
     objective: 'Keep track of one target as it moves among similar objects.',
     controls: 'Follow the target through the movement, then select its final position.',
