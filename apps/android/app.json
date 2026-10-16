@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "42 Brain",
+    "slug": "42-brain-mobile",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "scheme": "42brain",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.mossesmuwa.brain42",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "extra": {
+      "productMode": "offline-first"
+    }
+  }
+}
