@@ -211,10 +211,18 @@
         progress.plays += 1;
         progress.gameStats[currentId] = progress.gameStats[currentId] || { plays: 0, wins: 0 };
         progress.gameStats[currentId].plays += 1;
+        const submittedScore = Number(details.score);
+        const earnedScore = submittedScore > 0
+          ? Math.max(1, Math.min(1000, Math.floor(submittedScore)))
+          : success ? 10 : 0;
+        if (earnedScore > 0) {
+          progress.score += earnedScore;
+          const best = Math.max(earnedScore, bestFor(currentId));
+          localStorage.setItem(`42brain-best-${currentId}`, String(best));
+          $('arcadeBest').textContent = `${best} pts`;
+        }
         if (success) {
           progress.gameStats[currentId].wins += 1;
-          const earnedScore = Math.max(10, Math.min(1000, Number(details.score) || 10));
-          progress.score += earnedScore;
           progress.completed[currentId] = true;
           const arcadeWins = Object.values(progress.gameStats).reduce((sum, item) => sum + Number(item.wins || 0), 0);
           if (window.Store) {
@@ -228,9 +236,6 @@
             if (['memory','focus','speed','strategy','math','technical','lab'].every(l => lanes.has(l))) Store.unlockAchievement('full_spectrum');
           }
           progress.wins = Object.keys(progress.completed).length;
-          const best = Math.max(earnedScore, bestFor(currentId));
-          localStorage.setItem(`42brain-best-${currentId}`, String(best));
-          $('arcadeBest').textContent = `${best} pts`;
         }
         saveProgress();
       }
