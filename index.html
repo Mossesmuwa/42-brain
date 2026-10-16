@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="premium.css" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#171a16" />
+  <meta name="theme-color" content="#8a7bff" />
 </head>
 <body>
   <a class="skip-link" href="#puzzleArea">Skip to puzzle</a>
@@ -74,7 +74,7 @@
               </div>
             </div>
           </div>
-          <aside class="home-note"><span class="note-icon"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg></span><div><strong>Small sessions compound.</strong><p>Consistency beats intensity. Come back tomorrow and keep your streak moving.</p></div></aside>
+          <aside class="home-note"><span class="note-icon"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg></span><div><strong>Small sessions compound.</strong><p>Short sessions count. Return when it works for you; your progress will be here.</p></div></aside>
         </section>
       </main>
 
@@ -156,7 +156,7 @@
             <span class="game-icon"><svg class="ui-icon"><use href="ui-icons.svg#flag"/></svg></span><span class="game-card-copy"><strong>42 Challenge</strong><small>Mixed exam simulation</small></span><span class="game-arrow"><svg class="ui-icon"><use href="ui-icons.svg#target"/></svg></span>
           </button>
         </div>
-        <div class="lab-note"><span class="lab-note-icon"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span><strong>New this week</strong> 47 challenges now span memory, focus, speed, strategy, math, technical and experimental reasoning.</span></div>
+        <div class="lab-note"><span class="lab-note-icon"><svg class="ui-icon"><use href="ui-icons.svg#brain"/></svg></span><span><strong>New this week</strong> 50 challenges now span memory, focus, speed, strategy, math, technical and experimental reasoning.</span></div>
       </section>
 
       <div class="legend">
@@ -430,7 +430,7 @@
           <div id="workspaceBreadcrumb" class="workspace-breadcrumb" aria-label="Current location"><span>Workspace</span><span aria-hidden="true">/</span><strong>Home</strong></div>
           <section data-workspace-page="home" class="workspace-page active">
             <div class="workspace-hero"><span class="eyebrow">Cognitive training system</span><h1>Build a sharper mind.</h1><p>Short, tactile challenges for logic, memory, focus and planning. Every run is saved locally.</p><button class="cta-btn" data-page="arcade">Open Brain Arcade →</button></div>
-            <div class="workspace-cards"><article><b id="workspaceGameCount">47</b><span>playable challenges</span></article><article><b id="workspaceScore">0</b><span>arcade points</span></article><article><b id="workspaceStreak">0</b><span>day streak</span></article></div>
+            <div class="workspace-cards"><article><b id="workspaceGameCount">50</b><span>playable challenges</span></article><article><b id="workspaceScore">0</b><span>arcade points</span></article><article><b id="workspaceStreak">0</b><span>day streak</span></article></div>
             <div class="workspace-recommendations">
               <article class="recommend-card"><span class="eyebrow">Recommended now</span><h3 id="workspaceRecommendationTitle">Your next workout</h3><p id="workspaceRecommendationText">Complete a short session and 42 Brain will start learning which areas need more work.</p><button class="cta-btn" id="workspaceRecommendationBtn">Start recommendation →</button></article>
               <article class="recommend-card"><span class="eyebrow">Training status</span><h3 id="workspaceStatusTitle">Build your profile</h3><p id="workspaceStatusText">Your performance profile will appear after a few sessions.</p><div class="mini-progress"><i id="workspaceStatusBar"></i></div></article>
@@ -439,8 +439,8 @@
             <div class="lane-grid"><button data-page="memory"><b>Memory Studio</b><small>Encode, hold, reproduce</small></button><button data-page="focus"><b>Focus Arena</b><small>Filter signal from noise</small></button><button data-page="speed"><b>Speed Lab</b><small>React, compare, search</small></button><button data-page="strategy"><b>Strategy Room</b><small>Plan, route, allocate</small></button><button data-page="math"><b>Math Lab</b><small>Calculate under pressure</small></button><button data-page="technical"><b>Technical Lab</b><small>Algorithms, systems, debugging</small></button></div>
           </section>
           <section data-workspace-page="train" class="workspace-page"><span class="eyebrow">Adaptive training</span><h1>Train with intention.</h1><p>Choose a quick workout, build a plan around your weakest area, or run the full 42-question simulation.</p><div class="training-options"><article><span class="eyebrow">5–10 min</span><h3>Quick training</h3><p>Mixed adaptive rounds across the classic trainer.</p><button id="workspaceClassic" class="cta-btn">Start quick training →</button></article><article><span class="eyebrow">Weakness first</span><h3 id="workspacePlanTitle">Personal training plan</h3><p id="workspacePlanText">Build a focused session from your lowest-performing category.</p><button id="workspacePlan" class="sec-btn">Build my plan</button></article><article><span class="eyebrow">42 questions</span><h3>Exam simulation</h3><p>No hints, no pause, feedback after the run.</p><button id="workspaceExam" class="sec-btn">Start simulation</button></article></div></section>
-          <section data-workspace-page="daily" class="workspace-page"><span class="eyebrow">One challenge every day</span><h1>Daily Challenge</h1><div class="daily-dashboard"><article class="daily-hero"><span class="daily-kicker">TODAY</span><strong id="workspaceDailyDate">A fresh mixed workout</strong><p>10 questions. One attempt. Keep the streak alive and build your long-term record.</p><button id="workspaceDailyStart" class="cta-btn">Start today's challenge →</button></article><div class="daily-stats"><div><b id="workspaceDailyStreak">0</b><span>day streak</span></div><div><b id="workspaceDailyBest">—</b><span>best today</span></div><div><b id="workspaceDailyRuns">0</b><span>days completed</span></div></div></div></section>
-          <section data-workspace-page="arcade" class="workspace-page"><span class="eyebrow">Playable challenges</span><h1>Brain Arcade</h1><p>Short, replayable challenges for memory, focus, planning and logic. Choose a card to see its objective and controls.</p><div class="arcade-toolbar"><button class="sec-btn" id="arcadeHelp"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg> How to play</button><span class="toolbar-note">47 offline games · no timer pressure</span></div><div id="arcadeHelpPanel" class="help-panel hidden"><strong>How to play</strong><p>Choose a card, read the objective and use the buttons or arrow keys shown. Reset restarts the current puzzle; New game creates a fresh layout. Your score and best scores stay on this device.</p></div><div id="gameCatalog" class="game-catalog"></div></section>
+          <section data-workspace-page="daily" class="workspace-page"><span class="eyebrow">One challenge every day</span><h1>Daily Challenge</h1><div class="daily-dashboard"><article class="daily-hero"><span class="daily-kicker">TODAY</span><strong id="workspaceDailyDate">A fresh mixed workout</strong><p>10 questions. Try today’s set when it suits you, and build a long-term record without pressure.</p><button id="workspaceDailyStart" class="cta-btn">Start today's challenge →</button></article><div class="daily-stats"><div><b id="workspaceDailyStreak">0</b><span>day streak</span></div><div><b id="workspaceDailyBest">—</b><span>best today</span></div><div><b id="workspaceDailyRuns">0</b><span>days completed</span></div></div></div></section>
+          <section data-workspace-page="arcade" class="workspace-page"><span class="eyebrow">Playable challenges</span><h1>Brain Arcade</h1><p>Short, replayable challenges for memory, focus, planning and logic. Choose a card to see its objective and controls.</p><div class="arcade-toolbar"><button class="sec-btn" id="arcadeHelp"><svg class="ui-icon"><use href="ui-icons.svg#lightbulb"/></svg> How to play</button><span class="toolbar-note">50 offline games · no timer pressure</span></div><div id="arcadeHelpPanel" class="help-panel hidden"><strong>How to play</strong><p>Choose a card, read the objective and use the buttons or arrow keys shown. Reset restarts the current puzzle; New game creates a fresh layout. Your score and best scores stay on this device.</p></div><div id="gameCatalog" class="game-catalog"></div></section>
           <section data-workspace-page="memory" class="workspace-page"><span class="eyebrow">Encode · retain · recall</span><h1>Memory Studio</h1><p>Working memory, spatial recall, delayed recall and dual-memory challenges.</p><div class="game-catalog" data-filter="memory"></div></section>
           <section data-workspace-page="focus" class="workspace-page"><span class="eyebrow">Selective attention</span><h1>Focus Arena</h1><p>Filter noise, spot targets and follow changing rules without rushing.</p><div class="game-catalog" data-filter="focus"></div></section>
           <section data-workspace-page="speed" class="workspace-page"><span class="eyebrow">Reaction · comparison · search</span><h1>Speed Lab</h1><p>Train fast decisions without sacrificing accuracy.</p><div class="game-catalog" data-filter="speed"></div></section>
@@ -462,5 +462,6 @@
   <script src="js/arcade/catalog.js"></script>
   <script src="js/arcade/games.js"></script>
   <script src="arcade.js"></script>
+  <script src="product-enhancements.js"></script>
 </body>
 </html>
