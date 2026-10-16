@@ -2,6 +2,8 @@
 'use strict';
 
 window.ArcadeCatalog = [
+  { id: 'gauntlet', title: 'Logic Gauntlet', lane: 'lab', icon: 'bolt',
+    objective: 'Clear six mixed reasoning rounds while preserving lives and building a combo multiplier.', controls: 'Solve arithmetic, number sequences and ordering deductions before each round times out.', level: 'Adaptive', time: '3 min' },
   { id: 'neural', title: 'Neural Sequence', lane: 'memory', icon: 'brain',
     objective: 'Read a growing signal sequence, replay it in order, and build a score across five rounds with two lives.', controls: 'Watch the lit cells, then tap the same cells in sequence.', level: 'Adaptive', time: '3 min' },
   { id: 'cipher', title: 'Cipher Vault', lane: 'technical', icon: 'settings',
