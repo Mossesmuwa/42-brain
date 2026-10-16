@@ -332,8 +332,9 @@
           feedback.textContent = 'Match found. Keep going.';
           if (matches === pairCount) {
             score += Math.max(0, 40 - moves * 2);
+            ctx.board.querySelector('#cmScore').textContent = score;
             if (round === rounds.length - 1) {
-              ctx.finish(true, `Memory master. All three boards cleared in ${moves} flips on the final board — ${score} points.`, { score });
+              ctx.finish(true, `Memory master. Final board cleared in ${moves} flips. Total score: ${score} points.`, { score });
             } else {
               round++;
               feedback.textContent = 'Board cleared. Next round adds more pairs.';
