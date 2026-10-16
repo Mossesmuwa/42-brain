@@ -532,8 +532,100 @@
     buildRound();
   }
 
+
+  /* Six varied timed rounds with a combo multiplier and limited lives. */
+  function logicGauntlet(ctx) {
+    const totalRounds = 6;
+    let round = 1, lives = 2, score = 0, combo = 0, answered = false;
+    const makeQuestion = () => {
+      const mode = Math.floor(Math.random() * 3);
+      if (mode === 0) {
+        const a = 3 + Math.floor(Math.random() * (round * 4 + 4));
+        const b = 2 + Math.floor(Math.random() * (round * 3 + 5));
+        const op = pick(['+', '−', '×']);
+        const answer = op === '+' ? a + b : op === '−' ? a - b : a * b;
+        return { prompt: `Solve under pressure: ${a} ${op} ${b} = ?`, answer, options: makeOptions(answer, round) };
+      }
+      if (mode === 1) {
+        const step = 2 + Math.floor(Math.random() * (round + 2));
+        const start = 1 + Math.floor(Math.random() * 12);
+        const values = [start, start + step, start + step * 2, start + step * 3];
+        const answer = start + step * 4;
+        return { prompt: `Find the next value: ${values.join(' · ')} · ?`, answer, options: makeOptions(answer, round) };
+      }
+      const people = shuffled(['Ari', 'Bea', 'Cal', 'Dee']);
+      const answer = people[0];
+      return {
+        prompt: `${people[0]} finished before ${people[1]}. ${people[1]} finished before ${people[2]}. ${people[3]} finished after ${people[2]}. Who finished first?`,
+        answer,
+        options: shuffled(people)
+      };
+    };
+    const makeOptions = (answer, difficulty) => {
+      const values = new Set([answer]);
+      while (values.size < 4) {
+        const spread = Math.max(3, difficulty * 4);
+        const candidate = answer + (Math.floor(Math.random() * spread * 2) - spread);
+        if (candidate !== answer) values.add(candidate);
+      }
+      return shuffled([...values]);
+    };
+    ctx.board.innerHTML = `
+      <div class="game-instruction">Six quick rounds. Correct answers build your combo; two mistakes end the run. Difficulty increases as you advance.</div>
+      <div class="game-status"><span>ROUND <b id="lgRound">1 / ${totalRounds}</b></span><span>COMBO <b id="lgCombo">0×</b></span><span>SCORE <b id="lgScore">0</b></span><span>LIVES <b id="lgLives">2</b></span></div>
+      <div id="lgQuestion" class="logic-question"></div>
+      <div id="lgOptions" class="choice-column"></div>
+      <p id="lgFeedback" class="game-instruction" aria-live="polite">Round one. Focus.</p>`;
+    const showRound = () => {
+      if (ctx.isDone()) return;
+      answered = false;
+      const question = makeQuestion();
+      ctx.board.querySelector('#lgRound').textContent = `${round} / ${totalRounds}`;
+      ctx.board.querySelector('#lgQuestion').textContent = question.prompt;
+      ctx.board.querySelector('#lgFeedback').textContent = 'Choose before the timer runs out.';
+      const options = ctx.board.querySelector('#lgOptions');
+      options.innerHTML = question.options.map(option => `<button type="button" data-answer="${String(option)}">${String(option)}</button>`).join('');
+      const resolve = value => {
+        if (answered || ctx.isDone()) return;
+        answered = true;
+        const correct = String(value) === String(question.answer);
+        if (correct) {
+          combo++;
+          score += 20 + round * 5 + Math.min(25, combo * 5);
+          ctx.board.querySelector('#lgScore').textContent = score;
+          ctx.board.querySelector('#lgCombo').textContent = `${combo}×`;
+          ctx.board.querySelector('#lgFeedback').textContent = combo > 1 ? `Correct — combo ${combo}×. Keep it alive.` : 'Correct. Next round.';
+        } else {
+          lives--;
+          combo = 0;
+          ctx.board.querySelector('#lgLives').textContent = lives;
+          ctx.board.querySelector('#lgCombo').textContent = '0×';
+          ctx.board.querySelector('#lgFeedback').textContent = `Not quite. Correct answer: ${question.answer}.`;
+        }
+        options.querySelectorAll('button').forEach(button => {
+          button.disabled = true;
+          if (String(button.dataset.answer) === String(question.answer)) button.classList.add('selected');
+        });
+        if (lives <= 0) {
+          ctx.finish(false, `Gauntlet ended at round ${round}. Final score: ${score}.`, { score });
+        } else if (round === totalRounds) {
+          ctx.finish(true, `Gauntlet cleared. ${score} points with a final combo of ${combo}×.`, { score });
+        } else {
+          round++;
+          ctx.later(showRound, 650);
+        }
+      };
+      options.querySelectorAll('button').forEach(button => button.addEventListener('click', () => resolve(button.dataset.answer)));
+      ctx.later(() => {
+        if (!answered && !ctx.isDone()) resolve('__timeout__');
+      }, Math.max(7000, 13000 - round * 800));
+    };
+    showRound();
+  }
+
   function render(id, ctx) {
     resetMessage(ctx);
+    if (id === 'gauntlet') return logicGauntlet(ctx);
     if (id === 'neural') return neuralSequence(ctx);
     if (id === 'cipher') return cipherVault(ctx);
     if (id === 'grid' || id === 'maze' || id === 'pointer') return movementGame(ctx, id === 'pointer' ? 'maze' : id);
