@@ -48,6 +48,7 @@ const iconSvg = name => `<svg class="ui-icon" aria-hidden="true"><use href="ui-i
 
 const screens = {
   splash: $('splash'),
+  workspace: $('workspace'),
   game: $('gameScreen'),
   results: $('resultsScreen'),
   stats: $('statsPanel'),
@@ -259,7 +260,7 @@ el.pauseBtn.addEventListener('click', () => {
 /* ── QUIT SESSION ────────────────────────────────────────────────── */
 el.exitGameBtn.addEventListener('click', () => {
   SoundFX.click();
-  appModal('Quit the current session? Your progress will be lost.', true, () => { stopTimer(); clearTimeout(G.flashTimeout); showScreen('splash'); });
+  appModal('Quit the current session? Your progress will be lost.', true, () => { stopTimer(); clearTimeout(G.flashTimeout); showScreen('workspace'); });
 });
 
 /* ── ROUND FLOW ──────────────────────────────────────────────────── */
@@ -1281,7 +1282,7 @@ el.statsBtn.addEventListener('click', () => {
   populateStatsPanel();
   showScreen('stats');
 });
-el.closeStatsBtn.addEventListener('click', () => { SoundFX.click(); showScreen('splash'); });
+el.closeStatsBtn.addEventListener('click', () => { SoundFX.click(); showScreen('workspace'); });
 
 document.querySelectorAll('.stab').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1346,7 +1347,7 @@ el.playAgainBtn.addEventListener('click', () => {
   if (G.mode === 'duo') { G.player = 1; G.playerScores = [0, 0]; }
   startGame();
 });
-el.mainMenuBtn.addEventListener('click', () => showScreen('splash'));
+el.mainMenuBtn.addEventListener('click', () => showScreen('workspace'));
 
 /* ── EXPANSION FEATURES ────────────────────────────────────────── */
 const enhancement = {
