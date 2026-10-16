@@ -140,7 +140,6 @@ const Store = {
       profile: this.getProfile(),
       plan: this.getPlan(),
       customPuzzles: this.getCustomPuzzles(),
-      highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') },
       version: this.VERSION,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -151,7 +150,7 @@ const Store = {
   },
 
   backupData() {
-    const payload = { backedUp: new Date().toISOString(), version: this.VERSION, settings: this.getSettings(), stats: this.getStats(), achievements: this.getAchievements(), daily: this.getDailyData(), profile: this.getProfile(), arcade: this.getArcadeProgress() };
+    const payload = { backedUp: new Date().toISOString(), version: this.VERSION, settings: this.getSettings(), stats: this.getStats(), achievements: this.getAchievements(), daily: this.getDailyData(), profile: this.getProfile(), plan: this.getPlan(), customPuzzles: this.getCustomPuzzles(), highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') }, arcade: this.getArcadeProgress() };
     this.set('backup', payload);
     return payload;
   },
@@ -186,7 +185,7 @@ const Store = {
 
   clearAll() {
     this.backupData();
-    Object.keys(localStorage).filter(k => k.startsWith(this.P) && k !== this.P + 'backup').forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => (k.startsWith(this.P) && k !== this.P + 'backup') || k === '42brain-arcade-progress' || k === '42brain-arcade-score' || k.startsWith('42brain-best-')).forEach(k => localStorage.removeItem(k));
   },
 };
 
