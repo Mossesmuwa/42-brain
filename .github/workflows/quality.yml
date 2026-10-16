@@ -16,6 +16,8 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check storage.js
+          node --check achievements.js
+          node --check sounds.js
           node --check service-worker.js
           node --check product-enhancements.js
           node --check game.js
