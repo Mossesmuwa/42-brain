@@ -94,13 +94,16 @@ const Store = {
 
   /* ── DAILY CHALLENGE ── */
   getDailyData()  { return this.get('daily', { lastDate: null, streak: 0, completed: {} }); },
-  todayKey()      { return new Date().toISOString().slice(0, 10); },
+  todayKey()      { const d = new Date(); const pad = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; },
   completedToday(){ return this.getDailyData().lastDate === this.todayKey(); },
 
   markDailyComplete(score) {
     const data = this.getDailyData();
     const today = this.todayKey();
-    const yest  = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const pad = n => String(n).padStart(2, '0');
+    const yest = `${yesterday.getFullYear()}-${pad(yesterday.getMonth() + 1)}-${pad(yesterday.getDate())}`;
     data.streak = (data.lastDate === yest) ? data.streak + 1 : 1;
     data.lastDate = today;
     data.completed[today] = score;
@@ -133,7 +136,12 @@ const Store = {
       achievements: this.getAchievements(),
       highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') },
       arcade: this.getArcadeProgress(),
-      daily: this.getDailyData(), version: this.VERSION,
+      daily: this.getDailyData(),
+      profile: this.getProfile(),
+      plan: this.getPlan(),
+      customPuzzles: this.getCustomPuzzles(),
+      highScores: { all: this.getHighScores('all'), training: this.getHighScores('training'), test: this.getHighScores('test'), mixed: this.getHighScores('mixed'), daily: this.getHighScores('daily') },
+      version: this.VERSION,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
@@ -150,7 +158,15 @@ const Store = {
   importData(payload) {
     if (!this.validateImport(payload)) throw new Error('Invalid 42 Brain backup');
     this.backupData();
-    ['settings','stats','achievements','daily','profile'].forEach(k => { if (payload[k] !== undefined) this.set(k, payload[k]); });
+    ['settings','stats','achievements','daily','profile','plan','custom_puzzles'].forEach(k => {
+      const sourceKey = k === 'custom_puzzles' ? 'customPuzzles' : k;
+      if (payload[sourceKey] !== undefined) this.set(k, payload[sourceKey]);
+    });
+    if (payload.highScores && typeof payload.highScores === 'object') {
+      Object.entries(payload.highScores).forEach(([mode, scores]) => {
+        if (Array.isArray(scores) && ['all','training','test','mixed','daily'].includes(mode)) this.set('scores_' + mode, scores.slice(0, 100));
+      });
+    }
     if (payload.arcade) this.setRawArcadeProgress(payload.arcade);
     return true;
   },
@@ -158,7 +174,9 @@ const Store = {
     return !!(payload && typeof payload === 'object' && payload.stats && typeof payload.stats === 'object' &&
       payload.settings && typeof payload.settings === 'object' &&
       (!payload.stats.mistakes || Array.isArray(payload.stats.mistakes)) &&
-      (!payload.stats.sessions || Array.isArray(payload.stats.sessions)));
+      (!payload.stats.sessions || Array.isArray(payload.stats.sessions)) &&
+      (!payload.highScores || typeof payload.highScores === 'object') &&
+      (!payload.arcade || typeof payload.arcade === 'object'));
   },
   markMistakeMastered(index) {
     const stats=this.getStats();
